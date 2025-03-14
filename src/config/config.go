@@ -6,7 +6,13 @@ import (
 )
 
 type Config struct {
+	Port     string
+	Cors     CORSConfig
 	Postgres databases.PostgresConfig
+}
+
+type CORSConfig struct {
+	AllowedOrigin string
 }
 
 func LoadConfig() (*Config, error) {
