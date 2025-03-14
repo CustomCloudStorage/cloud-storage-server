@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/CustomCloudStorage/config"
+	"github.com/CustomCloudStorage/databases"
 )
 
 func main() {
@@ -12,5 +11,9 @@ func main() {
 		return
 	}
 
-	fmt.Println(cfg)
+	postgresDB, err := databases.GetDB(cfg.Postgres)
+	if err != nil {
+		return
+	}
+	defer postgresDB.Close()
 }

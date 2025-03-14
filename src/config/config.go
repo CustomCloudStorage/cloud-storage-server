@@ -1,9 +1,12 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"github.com/CustomCloudStorage/databases"
+	"github.com/spf13/viper"
+)
 
 type Config struct {
-	Example string
+	Postgres databases.PostgresConfig
 }
 
 func LoadConfig() (*Config, error) {

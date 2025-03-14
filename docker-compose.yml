@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres
+    container_name: cloud-storage-postgres
+    environment:
+      - POSTGRES_PASSWORD=2153
+    ports:
+      - "5432:5432"
+    restart: always
