@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/CustomCloudStorage/types"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -24,11 +25,11 @@ func GetDB(cfg PostgresConfig) (*sql.DB, error) {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		return nil, err
+		return nil, types.ErrConnection.Wrap(err, "failed to open database connection")
 	}
 
 	if err = db.Ping(); err != nil {
-		return nil, err
+		return nil, types.ErrPingFailed.Wrap(err, "failed to ping database")
 	}
 
 	if err := RunMigrations(db, "./migrations"); err != nil {
@@ -41,18 +42,18 @@ func GetDB(cfg PostgresConfig) (*sql.DB, error) {
 func RunMigrations(db *sql.DB, migrationsPath string) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("could not create migration driver: %w", err)
+		return types.ErrDriverCreate.Wrap(err, "failed to create migration driver")
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://"+migrationsPath,
 		"postgres", driver)
 	if err != nil {
-		return fmt.Errorf("could not create migration instance: %w", err)
+		return types.ErrMigration.Wrap(err, "failed to create migration instance")
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("could not run migrations: %w", err)
+		return types.ErrMigration.Wrap(err, "failed to run migrations")
 	}
 
 	log.Println("Migrations applied successfully")

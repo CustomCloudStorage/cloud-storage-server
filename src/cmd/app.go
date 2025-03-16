@@ -13,12 +13,12 @@ import (
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		return
+		log.Fatalf("Failed to load the config: %v", err)
 	}
 
 	postgresDB, err := databases.GetDB(cfg.Postgres)
 	if err != nil {
-		return
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer postgresDB.Close()
 
