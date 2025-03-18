@@ -4,7 +4,19 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/CustomCloudStorage/repositories"
 )
+
+type Handler struct {
+	Repository *repositories.Repository
+}
+
+func NewHandler(repository *repositories.Repository) *Handler {
+	return &Handler{
+		Repository: repository,
+	}
+}
 
 type HandlerWithErrorFunc func(w http.ResponseWriter, r *http.Request) error
 

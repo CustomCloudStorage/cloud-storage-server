@@ -6,6 +6,8 @@ import (
 
 	"github.com/CustomCloudStorage/config"
 	"github.com/CustomCloudStorage/databases"
+	"github.com/CustomCloudStorage/handlers"
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -21,6 +23,9 @@ func main() {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer postgresDB.Close()
+
+	repository := repositories.NewRepository(postgresDB)
+	handler := handlers.NewHandler(repository) // Переменная пока не используется
 
 	router := mux.NewRouter()
 
