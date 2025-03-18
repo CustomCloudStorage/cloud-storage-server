@@ -25,10 +25,11 @@ func main() {
 	defer postgresDB.Close()
 
 	repository := repositories.NewRepository(postgresDB)
-	handler := handlers.NewHandler(repository) // Переменная пока не используется
+	handler := handlers.NewHandler(repository)
 
 	router := mux.NewRouter()
 
+	router.HandleFunc("/users/{id}", handlers.HandleError(handler.HandleGetUser)).Methods("GET")
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
 		AllowCredentials: true,

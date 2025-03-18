@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/CustomCloudStorage/repositories"
+	"github.com/CustomCloudStorage/utils"
+	"github.com/joomcode/errorx"
 )
 
 type Handler struct {
@@ -25,7 +27,9 @@ func HandleError(handler HandlerWithErrorFunc) http.HandlerFunc {
 		err := handler(w, r)
 		if err != nil {
 			switch {
-			//Здесь будут описаны остальные ошибки
+			case errorx.IsOfType(err, utils.ErrNotFound):
+				log.Println(err.Error())
+				writeErrorResponse(w, http.StatusNotFound, map[string]string{"error": "Data not found"})
 			default:
 				log.Println("Internal server error:", err.Error())
 				writeErrorResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
