@@ -27,3 +27,20 @@ func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) er
 
 	return nil
 }
+
+func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	log.Println("GET Request to get all users")
+
+	users, err := handler.Repository.Postgres.GetAllUsers(ctx)
+	if err != nil {
+		return utils.ErrGet.Wrap(err, "failed to get all users")
+	}
+
+	if err := json.NewEncoder(w).Encode(users); err != nil {
+		return utils.ErrJsonEncode.Wrap(err, "failed to encode users to JSON")
+	}
+
+	return nil
+}

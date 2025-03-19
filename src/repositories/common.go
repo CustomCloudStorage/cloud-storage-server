@@ -17,6 +17,7 @@ type Postgres struct {
 
 type UserRepository interface {
 	GetUser(context.Context, string) (*types.User, error)
+	GetAllUsers(context.Context) ([]types.User, error)
 }
 
 func NewRepository(db *sql.DB) *Repository {

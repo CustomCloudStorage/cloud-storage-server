@@ -30,6 +30,7 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/users/{id}", handlers.HandleError(handler.HandleGetUser)).Methods("GET")
+	router.HandleFunc("/users", handlers.HandleError(handler.HandleGetAllUsers)).Methods("GET")
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
 		AllowCredentials: true,
