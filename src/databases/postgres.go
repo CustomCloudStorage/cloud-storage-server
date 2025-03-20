@@ -56,6 +56,5 @@ func RunMigrations(db *sql.DB, migrationsPath string) error {
 		return utils.ErrMigration.Wrap(err, "failed to run migrations")
 	}
 
-	log.Println("Migrations applied successfully")
 	return nil
 }
