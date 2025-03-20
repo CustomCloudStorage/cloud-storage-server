@@ -30,6 +30,9 @@ func HandleError(handler HandlerWithErrorFunc) http.HandlerFunc {
 			case errorx.IsOfType(err, utils.ErrNotFound):
 				log.Println(err.Error())
 				writeErrorResponse(w, http.StatusNotFound, map[string]string{"error": "Data not found"})
+			case errorx.IsOfType(err, utils.ErrAlreadyExist):
+				log.Println(err.Error())
+				writeErrorResponse(w, http.StatusBadRequest, map[string]string{"error": "The request body is invalid"})
 			default:
 				log.Println("Internal server error:", err.Error())
 				writeErrorResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})

@@ -31,6 +31,8 @@ func main() {
 
 	router.HandleFunc("/users/{id}", handlers.HandleError(handler.HandleGetUser)).Methods("GET")
 	router.HandleFunc("/users", handlers.HandleError(handler.HandleGetAllUsers)).Methods("GET")
+	router.HandleFunc("/users", handlers.HandleError(handler.HandleCreateUser)).Methods("POST")
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
 		AllowCredentials: true,

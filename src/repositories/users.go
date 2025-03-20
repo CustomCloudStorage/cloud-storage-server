@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	get_user      = "SELECT id, name, email, role, storage-limit, last-update FROM users"
-	get_all_users = "SELECT id, name, email, role, storage-limit FROM users"
+	get_user      = "SELECT id, name, email, role, storage_limit, last_update FROM users"
+	get_all_users = "SELECT id, name, email, role, storage_limit FROM users"
+	create_user   = "INSERT INTO users (name, email, password, role, storage_limit, last_update) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 )
 
 func (postgres *Postgres) GetUser(ctx context.Context, id string) (*types.User, error) {
@@ -41,4 +42,13 @@ func (postgres *Postgres) GetAllUsers(ctx context.Context) ([]types.User, error)
 	}
 
 	return users, nil
+}
+
+func (postgres *Postgres) CreateUser(ctx context.Context, user *types.User) (string, error) {
+	var id string
+	if err := postgres.Db.QueryRowContext(ctx, create_user, user.Name, user.Email, user.Password, user.Role, user.StorageLimit, user.LastUpdate).Scan(&id); err != nil {
+		return "", utils.DetermineSQLError(err, "create data")
+	}
+
+	return id, nil
 }

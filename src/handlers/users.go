@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/gorilla/mux"
 )
@@ -41,6 +43,37 @@ func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request
 	if err := json.NewEncoder(w).Encode(users); err != nil {
 		return utils.ErrJsonEncode.Wrap(err, "failed to encode users to JSON")
 	}
+
+	return nil
+}
+
+func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	log.Println("POST Request to create user")
+
+	var user types.User
+
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the user's struct")
+	}
+
+	time, err := utils.FormatDateTime(time.Now())
+	if err != nil {
+		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
+	}
+
+	user.LastUpdate = time
+
+	id, err := handler.Repository.Postgres.CreateUser(ctx, &user)
+	if err != nil {
+		return utils.ErrPost.Wrap(err, "failed to create user")
+	}
+
+	writeErrorResponse(w, http.StatusCreated, map[string]string{
+		"success": "User created successfully",
+		"user_id": id,
+	})
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/joomcode/errorx"
+	"github.com/lib/pq"
 )
 
 var (
@@ -20,16 +21,28 @@ var (
 
 	ErrHandler    = errorx.NewNamespace("handler")
 	ErrGet        = ErrHandler.NewType("get_error")
+	ErrPost       = ErrHandler.NewType("post_error")
+	ErrJsonDecode = ErrHandler.NewType("json_decode_error")
 	ErrJsonEncode = ErrHandler.NewType("json_encode_error")
 
-	ErrRepository = errorx.NewNamespace("repository")
-	ErrNotFound   = ErrRepository.NewType("not_found_error")
-	ErrSql        = ErrRepository.NewType("sql_error")
+	ErrRepository   = errorx.NewNamespace("repository")
+	ErrNotFound     = ErrRepository.NewType("not_found_error")
+	ErrSql          = ErrRepository.NewType("sql_error")
+	ErrAlreadyExist = ErrRepository.NewType("already_exist_error")
+
+	ErrDateTime = errorx.NewNamespace("date/time")
+	ErrLocation = ErrDateTime.NewType("location_error")
+	ErrFormat   = ErrDateTime.NewType("format_error")
 )
 
 func DetermineSQLError(err error, context string) error {
+	if pqErr, ok := err.(*pq.Error); ok {
+		if pqErr.Code == "23505" {
+			return ErrAlreadyExist.Wrap(err, "unique data is already exists: %s", context)
+		}
+	}
 	if err == sql.ErrNoRows {
-		return ErrNotFound.New("data not found: %s", context)
+		return ErrNotFound.Wrap(err, "data not found: %s", context)
 	}
 	return ErrSql.Wrap(err, context)
 }
