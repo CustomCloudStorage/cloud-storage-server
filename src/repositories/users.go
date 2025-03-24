@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	get_user      = "SELECT id, name, email, role, storage_limit, last_update FROM users"
+	get_user      = "SELECT id, name, email, role, storage_limit, last_update FROM users WHERE id = $1"
 	get_all_users = "SELECT id, name, email, role, storage_limit FROM users"
 	create_user   = "INSERT INTO users (name, email, password, role, storage_limit, last_update) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 )
@@ -16,7 +16,7 @@ const (
 func (postgres *Postgres) GetUser(ctx context.Context, id string) (*types.User, error) {
 	var user types.User
 
-	err := postgres.Db.QueryRowContext(ctx, get_user).Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.StorageLimit, &user.LastUpdate)
+	err := postgres.Db.QueryRowContext(ctx, get_user, id).Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.StorageLimit, &user.LastUpdate)
 	if err != nil {
 		return nil, utils.DetermineSQLError(err, "get data by id")
 	}
