@@ -16,7 +16,7 @@ func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) er
 
 	params := mux.Vars(r)
 
-	log.Println("GET Request to get user with ID:", params["id"])
+	log.Println("[GET] Fetching user with ID:", params["id"])
 
 	user, err := handler.Repository.Postgres.GetUser(ctx, params["id"])
 	if err != nil {
@@ -33,7 +33,7 @@ func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) er
 func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	log.Println("GET Request to get all users")
+	log.Println("[GET] Fetching all users")
 
 	users, err := handler.Repository.Postgres.GetAllUsers(ctx)
 	if err != nil {
@@ -50,7 +50,7 @@ func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request
 func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	log.Println("POST Request to create user")
+	log.Println("[POST] Creating new user")
 
 	var user types.User
 
