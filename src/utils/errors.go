@@ -20,8 +20,6 @@ var (
 	ErrValidation = ErrConfig.NewType("validation_error")
 
 	ErrHandler    = errorx.NewNamespace("handler")
-	ErrGet        = ErrHandler.NewType("get_error")
-	ErrPost       = ErrHandler.NewType("post_error")
 	ErrJsonDecode = ErrHandler.NewType("json_decode_error")
 	ErrJsonEncode = ErrHandler.NewType("json_encode_error")
 

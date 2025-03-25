@@ -20,7 +20,7 @@ func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) er
 
 	user, err := handler.Repository.Postgres.GetUser(ctx, params["id"])
 	if err != nil {
-		return utils.ErrGet.Wrap(err, "failed to get user %s", params["id"])
+		return err
 	}
 
 	if err := json.NewEncoder(w).Encode(user); err != nil {
@@ -37,7 +37,7 @@ func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request
 
 	users, err := handler.Repository.Postgres.GetAllUsers(ctx)
 	if err != nil {
-		return utils.ErrGet.Wrap(err, "failed to get all users")
+		return err
 	}
 
 	if err := json.NewEncoder(w).Encode(users); err != nil {
@@ -67,7 +67,7 @@ func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request)
 
 	id, err := handler.Repository.Postgres.CreateUser(ctx, &user)
 	if err != nil {
-		return utils.ErrPost.Wrap(err, "failed to create user")
+		return err
 	}
 
 	writeErrorResponse(w, http.StatusCreated, map[string]string{
