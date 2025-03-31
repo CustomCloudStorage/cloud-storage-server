@@ -2,9 +2,9 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/CustomCloudStorage/types"
+	"gorm.io/gorm"
 )
 
 type Repository struct {
@@ -12,7 +12,7 @@ type Repository struct {
 }
 
 type Postgres struct {
-	Db *sql.DB
+	Db *gorm.DB
 }
 
 type UserRepository interface {
@@ -21,7 +21,7 @@ type UserRepository interface {
 	CreateUser(context.Context, *types.User) (string, error)
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{
 		Postgres: Postgres{
 			Db: db,

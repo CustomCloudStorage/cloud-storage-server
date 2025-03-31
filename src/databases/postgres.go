@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log"
 
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 	"github.com/CustomCloudStorage/utils"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	migrate "github.com/golang-migrate/migrate/v4"
+	migratepg "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/lib/pq"
 )
 
 type PostgresConfig struct {
@@ -20,19 +23,27 @@ type PostgresConfig struct {
 	DBName   string
 }
 
-func GetDB(cfg PostgresConfig) (*sql.DB, error) {
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
+func GetDB(cfg PostgresConfig) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Error),
+	})
 	if err != nil {
 		return nil, utils.ErrConnection.Wrap(err, "failed to open database connection")
 	}
 
-	if err = db.Ping(); err != nil {
+	sqlDB, err := db.DB()
+	if err != nil {
 		return nil, utils.ErrPingFailed.Wrap(err, "failed to ping database")
 	}
 
-	if err := RunMigrations(db, "./migrations"); err != nil {
+	if err = sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	if err := RunMigrations(sqlDB, "./migrations"); err != nil {
 		log.Fatalf("Could not run migrations: %v", err)
 	}
 
@@ -40,14 +51,16 @@ func GetDB(cfg PostgresConfig) (*sql.DB, error) {
 }
 
 func RunMigrations(db *sql.DB, migrationsPath string) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	driver, err := migratepg.WithInstance(db, &migratepg.Config{})
 	if err != nil {
 		return utils.ErrDriverCreate.Wrap(err, "failed to create migration driver")
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://"+migrationsPath,
-		"postgres", driver)
+		"postgres",
+		driver,
+	)
 	if err != nil {
 		return utils.ErrMigration.Wrap(err, "failed to create migration instance")
 	}

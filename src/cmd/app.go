@@ -22,7 +22,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
-	defer postgresDB.Close()
 
 	repository := repositories.NewRepository(postgresDB)
 	handler := handlers.NewHandler(repository)
