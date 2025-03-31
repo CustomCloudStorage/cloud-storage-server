@@ -81,8 +81,52 @@ func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	writeErrorResponse(w, http.StatusCreated, map[string]string{
+	writeJSONResponse(w, http.StatusCreated, map[string]string{
 		"success": "User created successfully",
+	})
+
+	return nil
+}
+
+func (handler *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	log.Println("[PUT] Updating user`s profile with id:", params["id"])
+
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+	}
+
+	var profile types.Profile
+	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
+		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the profile's struct")
+	}
+
+	user, err := handler.Repository.Postgres.GetUser(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if profile.LastUpdateProfile != user.Profile.LastUpdateProfile {
+		return utils.ErrDataConflict.New("The profile was changed by another user")
+	}
+
+	time, err := utils.FormatDateTime(time.Now())
+	if err != nil {
+		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
+	}
+
+	profile.LastUpdateProfile = time
+
+	if err := handler.Repository.Postgres.UpdateProfile(ctx, &profile, id); err != nil {
+		return err
+	}
+
+	writeJSONResponse(w, http.StatusOK, map[string]string{
+		"success": "Profile updated successfully",
 	})
 
 	return nil

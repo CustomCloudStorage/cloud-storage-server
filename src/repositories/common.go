@@ -16,9 +16,10 @@ type Postgres struct {
 }
 
 type UserRepository interface {
-	GetUser(context.Context, string) (*types.User, error)
+	GetUser(context.Context, int) (*types.User, error)
 	GetAllUsers(context.Context) ([]types.User, error)
-	CreateUser(context.Context, *types.User) (string, error)
+	CreateUser(context.Context, *types.User) error
+	UpdateProfile(context.Context, *types.Profile, int) error
 }
 
 func NewRepository(db *gorm.DB) *Repository {

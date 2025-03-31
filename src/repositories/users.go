@@ -38,3 +38,13 @@ func (postgres *Postgres) CreateUser(ctx context.Context, user *types.User) erro
 	}
 	return nil
 }
+
+func (postgres *Postgres) UpdateProfile(ctx context.Context, profile *types.Profile, id int) error {
+	if err := postgres.Db.WithContext(ctx).
+		Model(&types.Profile{}).
+		Where("user_id = ?", id).
+		Updates(profile).Error; err != nil {
+		return utils.DetermineSQLError(err, "update profile data")
+	}
+	return nil
+}

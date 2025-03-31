@@ -20,10 +20,11 @@ var (
 	ErrUnmarshal  = ErrConfig.NewType("unmarshal_error")
 	ErrValidation = ErrConfig.NewType("validation_error")
 
-	ErrHandler    = errorx.NewNamespace("handler")
-	ErrJsonDecode = ErrHandler.NewType("json_decode_error")
-	ErrJsonEncode = ErrHandler.NewType("json_encode_error")
-	ErrConversion = ErrHandler.NewType("conversion_error")
+	ErrHandler      = errorx.NewNamespace("handler")
+	ErrJsonDecode   = ErrHandler.NewType("json_decode_error")
+	ErrJsonEncode   = ErrHandler.NewType("json_encode_error")
+	ErrConversion   = ErrHandler.NewType("conversion_error")
+	ErrDataConflict = ErrHandler.NewType("data_conflict_error")
 
 	ErrRepository   = errorx.NewNamespace("repository")
 	ErrNotFound     = ErrRepository.NewType("not_found_error")

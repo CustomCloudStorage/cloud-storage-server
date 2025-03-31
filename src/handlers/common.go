@@ -29,19 +29,24 @@ func HandleError(handler HandlerWithErrorFunc) http.HandlerFunc {
 			switch {
 			case errorx.IsOfType(err, utils.ErrNotFound):
 				log.Println(err.Error())
-				writeErrorResponse(w, http.StatusNotFound, map[string]string{"error": "Data not found"})
+				writeJSONResponse(w, http.StatusNotFound, map[string]string{"error": "Data not found"})
 			case errorx.IsOfType(err, utils.ErrAlreadyExist):
 				log.Println(err.Error())
-				writeErrorResponse(w, http.StatusBadRequest, map[string]string{"error": "The request body is invalid"})
+				writeJSONResponse(w, http.StatusBadRequest, map[string]string{"error": "The request body is invalid"})
+			case errorx.IsOfType(err, utils.ErrDataConflict):
+				log.Println(err.Error())
+				writeJSONResponse(w, http.StatusConflict, map[string]string{
+					"сonflict": "The profile was changed by another user",
+				})
 			default:
 				log.Println("Internal server error:", err.Error())
-				writeErrorResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+				writeJSONResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 			}
 		}
 	}
 }
 
-func writeErrorResponse(w http.ResponseWriter, httpCode int, message map[string]string) {
+func writeJSONResponse(w http.ResponseWriter, httpCode int, message map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpCode)
 	json.NewEncoder(w).Encode(message)
