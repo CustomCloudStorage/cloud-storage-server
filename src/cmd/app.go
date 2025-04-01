@@ -34,6 +34,7 @@ func main() {
 	router.HandleFunc("/users/{id}/profile", handlers.HandleError(handler.HandleUpdateProfile)).Methods("PUT")
 	router.HandleFunc("/users/{id}/account", handlers.HandleError(handler.HandleUpdateAccount)).Methods("PUT")
 	router.HandleFunc("/users/{id}/credentials", handlers.HandleError(handler.HandleUpdateCredentials)).Methods("PUT")
+	router.HandleFunc("/users/{id}", handlers.HandleError(handler.HandleDeleteUser)).Methods("DELETE")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},

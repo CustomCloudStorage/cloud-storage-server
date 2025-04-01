@@ -68,3 +68,10 @@ func (postgres *Postgres) UpdateCredentials(ctx context.Context, credentials *ty
 	}
 	return nil
 }
+
+func (postgres *Postgres) DeleteUser(ctx context.Context, id int) error {
+	if err := postgres.Db.WithContext(ctx).Delete(&types.User{}, id).Error; err != nil {
+		return utils.DetermineSQLError(err, "delete user data")
+	}
+	return nil
+}

@@ -22,6 +22,7 @@ type UserRepository interface {
 	UpdateProfile(context.Context, *types.Profile, int) error
 	UpdateAccount(context.Context, *types.Account, int) error
 	UpdateCredentials(context.Context, *types.Credentials, int) error
+	DeleteUser(context.Context, int) error
 }
 
 func NewRepository(db *gorm.DB) *Repository {

@@ -219,3 +219,26 @@ func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.R
 
 	return nil
 }
+
+func (handler *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	log.Println("[DELETE] Deleting user with id:", params["id"])
+
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+	}
+
+	if err := handler.Repository.Postgres.DeleteUser(ctx, id); err != nil {
+		return err
+	}
+
+	writeJSONResponse(w, http.StatusOK, map[string]string{
+		"success": "User successfully deleted",
+	})
+
+	return nil
+}
