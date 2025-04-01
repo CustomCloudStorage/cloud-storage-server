@@ -58,3 +58,13 @@ func (postgres *Postgres) UpdateAccount(ctx context.Context, account *types.Acco
 	}
 	return nil
 }
+
+func (postgres *Postgres) UpdateCredentials(ctx context.Context, credentials *types.Credentials, id int) error {
+	if err := postgres.Db.WithContext(ctx).
+		Model(&types.Credentials{}).
+		Where("user_id = ?", id).
+		Updates(credentials).Error; err != nil {
+		return utils.DetermineSQLError(err, "update credentials data")
+	}
+	return nil
+}

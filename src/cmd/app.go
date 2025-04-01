@@ -33,6 +33,7 @@ func main() {
 	router.HandleFunc("/users", handlers.HandleError(handler.HandleCreateUser)).Methods("POST")
 	router.HandleFunc("/users/{id}/profile", handlers.HandleError(handler.HandleUpdateProfile)).Methods("PUT")
 	router.HandleFunc("/users/{id}/account", handlers.HandleError(handler.HandleUpdateAccount)).Methods("PUT")
+	router.HandleFunc("/users/{id}/credentials", handlers.HandleError(handler.HandleUpdateCredentials)).Methods("PUT")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},

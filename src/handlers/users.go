@@ -175,3 +175,47 @@ func (handler *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Reque
 
 	return nil
 }
+
+func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	params := mux.Vars(r)
+
+	log.Println("[PUT] Updating user's credentials with id:", params["id"])
+
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+	}
+
+	var credentials types.Credentials
+	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
+		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the credentials struct")
+	}
+
+	user, err := handler.Repository.Postgres.GetUser(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if credentials.LastUpdateCredentials != user.Credentials.LastUpdateCredentials {
+		return utils.ErrDataConflict.New("The credentials were changed by another user")
+	}
+
+	time, err := utils.FormatDateTime(time.Now())
+	if err != nil {
+		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
+	}
+
+	credentials.LastUpdateCredentials = time
+
+	if err := handler.Repository.Postgres.UpdateCredentials(ctx, &credentials, id); err != nil {
+		return err
+	}
+
+	writeJSONResponse(w, http.StatusOK, map[string]string{
+		"success": "Credentials updated successfully",
+	})
+
+	return nil
+}
