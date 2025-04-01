@@ -36,7 +36,7 @@ func HandleError(handler HandlerWithErrorFunc) http.HandlerFunc {
 			case errorx.IsOfType(err, utils.ErrDataConflict):
 				log.Println(err.Error())
 				writeJSONResponse(w, http.StatusConflict, map[string]string{
-					"сonflict": "The profile was changed by another user",
+					"сonflict": "The data was changed",
 				})
 			default:
 				log.Println("Internal server error:", err.Error())
