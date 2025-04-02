@@ -68,6 +68,13 @@ func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request)
 		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the user's struct")
 	}
 
+	securePass, err := utils.HashPassword(user.Credentials.Password)
+	if err != nil {
+		return utils.ErrHash.Wrap(err, "Failed to hash the password")
+	}
+
+	user.Credentials.Password = securePass
+
 	time, err := utils.FormatDateTime(time.Now())
 	if err != nil {
 		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
@@ -192,6 +199,13 @@ func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.R
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the credentials struct")
 	}
+
+	securePass, err := utils.HashPassword(credentials.Password)
+	if err != nil {
+		return utils.ErrHash.Wrap(err, "Failed to hash the password")
+	}
+
+	credentials.Password = securePass
 
 	user, err := handler.Repository.Postgres.GetUser(ctx, id)
 	if err != nil {

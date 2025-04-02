@@ -30,6 +30,7 @@ var (
 	ErrNotFound     = ErrRepository.NewType("not_found_error")
 	ErrSql          = ErrRepository.NewType("sql_error")
 	ErrAlreadyExist = ErrRepository.NewType("already_exist_error")
+	ErrHash         = ErrRepository.NewType("hash_error")
 
 	ErrDateTime = errorx.NewNamespace("date/time")
 	ErrLocation = ErrDateTime.NewType("location_error")
