@@ -6,6 +6,8 @@ import (
 
 	"github.com/CustomCloudStorage/config"
 	"github.com/CustomCloudStorage/databases"
+	"github.com/CustomCloudStorage/handlers"
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
@@ -20,9 +22,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
-	defer postgresDB.Close()
+
+	repository := repositories.NewRepository(postgresDB)
+	handler := handlers.NewHandler(repository)
 
 	router := mux.NewRouter()
+
+	router.HandleFunc("/users/{id}", handlers.HandleError(handler.HandleGetUser)).Methods("GET")
+	router.HandleFunc("/users", handlers.HandleError(handler.HandleGetAllUsers)).Methods("GET")
+	router.HandleFunc("/users", handlers.HandleError(handler.HandleCreateUser)).Methods("POST")
+	router.HandleFunc("/users/{id}/profile", handlers.HandleError(handler.HandleUpdateProfile)).Methods("PUT")
+	router.HandleFunc("/users/{id}/account", handlers.HandleError(handler.HandleUpdateAccount)).Methods("PUT")
+	router.HandleFunc("/users/{id}/credentials", handlers.HandleError(handler.HandleUpdateCredentials)).Methods("PUT")
+	router.HandleFunc("/users/{id}", handlers.HandleError(handler.HandleDeleteUser)).Methods("DELETE")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
