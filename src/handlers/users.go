@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
@@ -75,15 +74,6 @@ func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request)
 
 	user.Credentials.Password = securePass
 
-	time, err := utils.FormatDateTime(time.Now())
-	if err != nil {
-		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
-	}
-
-	user.Profile.LastUpdateProfile = time
-	user.Account.LastUpdateAccount = time
-	user.Credentials.LastUpdateCredentials = time
-
 	if err = handler.Repository.Postgres.CreateUser(ctx, &user); err != nil {
 		return err
 	}
@@ -117,16 +107,9 @@ func (handler *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
-	if profile.LastUpdateProfile != user.Profile.LastUpdateProfile {
+	if profile.UpdatedAt != user.Profile.UpdatedAt {
 		return utils.ErrDataConflict.New("The profile was changed by another user")
 	}
-
-	time, err := utils.FormatDateTime(time.Now())
-	if err != nil {
-		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
-	}
-
-	profile.LastUpdateProfile = time
 
 	if err := handler.Repository.Postgres.UpdateProfile(ctx, &profile, id); err != nil {
 		return err
@@ -161,16 +144,9 @@ func (handler *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
-	if account.LastUpdateAccount != user.Account.LastUpdateAccount {
+	if account.UpdatedAt != user.Account.UpdatedAt {
 		return utils.ErrDataConflict.New("The account was changed by another user")
 	}
-
-	time, err := utils.FormatDateTime(time.Now())
-	if err != nil {
-		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
-	}
-
-	account.LastUpdateAccount = time
 
 	if err := handler.Repository.Postgres.UpdateAccount(ctx, &account, id); err != nil {
 		return err
@@ -212,16 +188,9 @@ func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	if credentials.LastUpdateCredentials != user.Credentials.LastUpdateCredentials {
+	if credentials.UpdatedAt != user.Credentials.UpdatedAt {
 		return utils.ErrDataConflict.New("The credentials were changed by another user")
 	}
-
-	time, err := utils.FormatDateTime(time.Now())
-	if err != nil {
-		return utils.ErrFormat.Wrap(err, "failed to get the current time in the format")
-	}
-
-	credentials.LastUpdateCredentials = time
 
 	if err := handler.Repository.Postgres.UpdateCredentials(ctx, &credentials, id); err != nil {
 		return err
