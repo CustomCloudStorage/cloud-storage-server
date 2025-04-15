@@ -7,3 +7,4 @@ postgres:
   user: "postgres"
   password: "2153"
   dbname: "postgres"
+storageDir: "../storage"

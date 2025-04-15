@@ -7,6 +7,7 @@ type File struct {
 	UserID       int        `json:"user_id" gorm:"not null;column:user_id"`
 	FolderID     *int       `json:"folder_id,omitempty" gorm:"column:folder_id"`
 	Name         string     `json:"name" gorm:"not null;column:name"`
+	Extension    string     `json:"extension" gorm:"not null;column:extension"`
 	Size         int64      `json:"size" gorm:"not null;column:size"`
 	PhysicalName string     `json:"physical_name" gorm:"not null;column:physical_name"`
 	CreatedAt    time.Time  `json:"created_at" gorm:"column:created_at"`

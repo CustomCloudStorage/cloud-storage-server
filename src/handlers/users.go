@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -23,7 +23,7 @@ func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) er
 		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
 	}
 
-	user, err := handler.Repository.Postgres.GetUser(ctx, id)
+	user, err := h.Repository.User.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -37,12 +37,12 @@ func (handler *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) er
 	return nil
 }
 
-func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleListUsers(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	log.Println("[GET] Fetching all users")
 
-	users, err := handler.Repository.Postgres.GetAllUsers(ctx)
+	users, err := h.Repository.User.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (handler *Handler) HandleGetAllUsers(w http.ResponseWriter, r *http.Request
 	return nil
 }
 
-func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	log.Println("[POST] Creating new user")
@@ -74,7 +74,7 @@ func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request)
 
 	user.Credentials.Password = securePass
 
-	if err = handler.Repository.Postgres.CreateUser(ctx, &user); err != nil {
+	if err := h.Repository.User.Create(ctx, &user); err != nil {
 		return err
 	}
 
@@ -85,7 +85,7 @@ func (handler *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request)
 	return nil
 }
 
-func (handler *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -102,7 +102,7 @@ func (handler *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Reque
 		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the profile's struct")
 	}
 
-	user, err := handler.Repository.Postgres.GetUser(ctx, id)
+	user, err := h.Repository.User.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (handler *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Reque
 		return utils.ErrDataConflict.New("The profile was changed by another user")
 	}
 
-	if err := handler.Repository.Postgres.UpdateProfile(ctx, &profile, id); err != nil {
+	if err := h.Repository.User.UpdateProfile(ctx, &profile, id); err != nil {
 		return err
 	}
 
@@ -122,7 +122,7 @@ func (handler *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Reque
 	return nil
 }
 
-func (handler *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -139,7 +139,7 @@ func (handler *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Reque
 		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the account's struct")
 	}
 
-	user, err := handler.Repository.Postgres.GetUser(ctx, id)
+	user, err := h.Repository.User.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (handler *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Reque
 		return utils.ErrDataConflict.New("The account was changed by another user")
 	}
 
-	if err := handler.Repository.Postgres.UpdateAccount(ctx, &account, id); err != nil {
+	if err := h.Repository.User.UpdateAccount(ctx, &account, id); err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func (handler *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Reque
 	return nil
 }
 
-func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -183,7 +183,7 @@ func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.R
 
 	credentials.Password = securePass
 
-	user, err := handler.Repository.Postgres.GetUser(ctx, id)
+	user, err := h.Repository.User.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.R
 		return utils.ErrDataConflict.New("The credentials were changed by another user")
 	}
 
-	if err := handler.Repository.Postgres.UpdateCredentials(ctx, &credentials, id); err != nil {
+	if err := h.Repository.User.UpdateCredentials(ctx, &credentials, id); err != nil {
 		return err
 	}
 
@@ -203,7 +203,7 @@ func (handler *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.R
 	return nil
 }
 
-func (handler *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -215,7 +215,7 @@ func (handler *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request)
 		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
 	}
 
-	if err := handler.Repository.Postgres.DeleteUser(ctx, id); err != nil {
+	if err := h.Repository.User.Delete(ctx, id); err != nil {
 		return err
 	}
 

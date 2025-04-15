@@ -6,17 +6,20 @@ import (
 	"net/http"
 
 	"github.com/CustomCloudStorage/repositories"
+	"github.com/CustomCloudStorage/service"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/joomcode/errorx"
 )
 
 type Handler struct {
 	Repository *repositories.Repository
+	Service    *service.Service
 }
 
-func NewHandler(repository *repositories.Repository) *Handler {
+func NewHandler(repository *repositories.Repository, service *service.Service) *Handler {
 	return &Handler{
 		Repository: repository,
+		Service:    service,
 	}
 }
 

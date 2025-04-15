@@ -14,6 +14,7 @@ CREATE TABLE files (
     user_id INT NOT NULL,
     folder_id INT,
     name TEXT NOT NULL,
+    extension TEXT NOT NULL, 
     size BIGINT NOT NULL,
     physical_name TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),

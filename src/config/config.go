@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Port     string `validate:"required"`
-	Cors     CORSConfig
-	Postgres databases.PostgresConfig `validate:"required"`
+	Port       string `validate:"required"`
+	Cors       CORSConfig
+	Postgres   databases.PostgresConfig `validate:"required"`
+	StorageDir string                   `validate:"required"`
 }
 
 type CORSConfig struct {
