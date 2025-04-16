@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 type File struct {
 	ID           int        `json:"id" gorm:"primaryKey;column:id"`
@@ -13,4 +16,12 @@ type File struct {
 	CreatedAt    time.Time  `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt    time.Time  `json:"updated_at" gorm:"column:updated_at"`
 	DeletedAt    *time.Time `json:"deleted_at,omitempty" gorm:"column:deleted_at"`
+}
+
+type DownloadedFile struct {
+	Reader      io.ReadSeeker
+	FileName    string
+	ContentType string
+	FileSize    int64
+	ModTime     time.Time
 }

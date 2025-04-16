@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,6 +44,43 @@ func (s *file) UploadFile(ctx context.Context, userID int, folderID *int, fileNa
 	}
 
 	return nil
+}
+
+func (s *file) DownloadFile(ctx context.Context, userID int, fileID int) (*types.DownloadedFile, error) {
+	fileMeta, err := s.repository.File.GetByID(ctx, fileID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	filePath := filepath.Join(s.storageDir, fileMeta.PhysicalName)
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	buffer := make([]byte, 512)
+	n, err := f.Read(buffer)
+	if err != nil && err != io.EOF {
+		f.Close()
+		return nil, err
+	}
+	contentType := http.DetectContentType(buffer[:n])
+
+	if _, err = f.Seek(0, io.SeekStart); err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	downloadedFileName := fileMeta.Name + fileMeta.Extension
+
+	return &types.DownloadedFile{
+		Reader:      f,
+		FileName:    downloadedFileName,
+		ContentType: contentType,
+		FileSize:    fileMeta.Size,
+		ModTime:     fileMeta.UpdatedAt,
+	}, nil
 }
 
 func (s *file) DeleteFile(ctx context.Context, id int, userID int) error {

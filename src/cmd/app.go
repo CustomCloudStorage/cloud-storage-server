@@ -45,9 +45,10 @@ func main() {
 	router.HandleFunc("/users/{id}/folders", handlers.HandleError(handler.HandleDeleteFolder)).Methods("GET")
 
 	router.HandleFunc("/users/{id}/files", handlers.HandleError(handler.HandleUploadFile)).Methods("POST")
-	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleGetFile)).Methods("POST")
+	router.HandleFunc("/users/{id}/files/{fileID}/download", handlers.HandleError(handler.HandleDownloadFile)).Methods("GET")
+	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleGetFile)).Methods("GET")
 	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleDeleteFile)).Methods("DELETE")
-	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleListFiles))
+	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleListFiles)).Methods("GET")
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
 		AllowCredentials: true,
