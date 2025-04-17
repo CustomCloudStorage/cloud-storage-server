@@ -13,6 +13,14 @@ import (
 )
 
 func (s *file) UploadFile(ctx context.Context, userID int, folderID *int, fileName string, fileSize int64, fileData io.Reader) error {
+	user, err := s.repository.User.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user.Account.UsedStorage+fileSize > user.Account.StorageLimit {
+		return nil
+	}
+
 	extension := filepath.Ext(fileName)
 	baseName := strings.TrimSuffix(fileName, extension)
 
@@ -40,6 +48,10 @@ func (s *file) UploadFile(ctx context.Context, userID int, folderID *int, fileNa
 
 	if err := s.repository.File.Create(ctx, newFile); err != nil {
 		os.Remove(destPath)
+		return err
+	}
+
+	if err := s.repository.User.UpdateUsedStorage(ctx, userID, user.Account.UsedStorage+fileSize); err != nil {
 		return err
 	}
 
@@ -94,5 +106,21 @@ func (s *file) DeleteFile(ctx context.Context, id int, userID int) error {
 		return err
 	}
 
-	return s.repository.File.Delete(ctx, id, userID)
+	if err := s.repository.File.Delete(ctx, id, userID); err != nil {
+		return err
+	}
+
+	user, err := s.repository.User.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	newUsed := user.Account.UsedStorage - file.Size
+	if newUsed < 0 {
+		newUsed = 0
+	}
+	if err := s.repository.User.UpdateUsedStorage(ctx, userID, newUsed); err != nil {
+		return err
+	}
+
+	return nil
 }

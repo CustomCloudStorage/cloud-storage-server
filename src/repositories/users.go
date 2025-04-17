@@ -75,3 +75,13 @@ func (u *user) List(ctx context.Context) ([]types.User, error) {
 	}
 	return users, nil
 }
+
+func (u *user) UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int64) error {
+	if err := u.db.WithContext(ctx).
+		Model(&types.Profile{}).
+		Where("user_id = ?", id).
+		Update("used_storage", newUsedStorage).Error; err != nil {
+		return utils.DetermineSQLError(err, "update used storage data")
+	}
+	return nil
+}
