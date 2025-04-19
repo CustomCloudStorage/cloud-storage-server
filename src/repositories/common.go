@@ -62,4 +62,6 @@ type FileRepository interface {
 	GetByID(ctx context.Context, id int, userID int) (*types.File, error)
 	Delete(ctx context.Context, id int, userID int) error
 	ListByUserID(ctx context.Context, userID int) ([]types.File, error)
+	UpdateName(ctx context.Context, id int, userID int, name string)
+	UpdateFolder(ctx context.Context, id int, userID int, folderID int)
 }

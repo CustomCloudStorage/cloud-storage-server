@@ -1,2 +1,2 @@
-ALTER TABLE users
+ALTER TABLE accounts
     ADD COLUMN used_storage BIGINT NOT NULL DEFAULT 0;

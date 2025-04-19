@@ -73,6 +73,7 @@ func (h *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error
 	}
 
 	user.Credentials.Password = securePass
+	user.Account.UsedStorage = 0
 
 	if err := h.Repository.User.Create(ctx, &user); err != nil {
 		return err
@@ -213,6 +214,18 @@ func (h *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
 		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+	}
+
+	files, err := h.Repository.File.ListByUserID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if len(files) != 0 {
+		for _, file := range files {
+			if err := h.Service.File.DeleteFile(ctx, file.ID, id); err != nil {
+				return err
+			}
+		}
 	}
 
 	if err := h.Repository.User.Delete(ctx, id); err != nil {

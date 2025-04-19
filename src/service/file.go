@@ -106,10 +106,6 @@ func (s *file) DeleteFile(ctx context.Context, id int, userID int) error {
 		return err
 	}
 
-	if err := s.repository.File.Delete(ctx, id, userID); err != nil {
-		return err
-	}
-
 	user, err := s.repository.User.GetByID(ctx, userID)
 	if err != nil {
 		return err
