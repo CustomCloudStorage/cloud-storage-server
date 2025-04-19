@@ -69,5 +69,31 @@ func RunMigrations(db *sql.DB, migrationsPath string) error {
 		return utils.ErrMigration.Wrap(err, "failed to run migrations")
 	}
 
+	ver, dirty, err := GetCurrentMigrationVersion(db, "./migrations")
+	if err != nil {
+		return err
+	}
+	log.Printf("current version: %d, dirty: %v", ver, dirty)
+
 	return nil
+}
+
+func GetCurrentMigrationVersion(db *sql.DB, migrationsPath string) (version uint, dirty bool, err error) {
+	driver, err := migratepg.WithInstance(db, &migratepg.Config{})
+	if err != nil {
+		return 0, false, utils.ErrDriverCreate.Wrap(err, "failed to create migration driver")
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationsPath,
+		"postgres",
+		driver,
+	)
+	if err != nil {
+		return 0, false, utils.ErrMigration.Wrap(err, "failed to create migration instance")
+	}
+	version, dirty, err = m.Version()
+	if err == migrate.ErrNilVersion {
+		return 0, false, nil
+	}
+	return version, dirty, err
 }
