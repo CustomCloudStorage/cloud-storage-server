@@ -12,6 +12,7 @@ type Config struct {
 	Cors       CORSConfig
 	Postgres   databases.PostgresConfig `validate:"required"`
 	StorageDir string                   `validate:"required"`
+	TmpUpload  string                   `validate:"required"`
 }
 
 type CORSConfig struct {

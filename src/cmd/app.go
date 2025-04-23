@@ -25,7 +25,7 @@ func main() {
 	}
 
 	repository := repositories.NewRepository(postgresDB)
-	service := service.NewService(repository, cfg.StorageDir)
+	service := service.NewService(repository, cfg.StorageDir, cfg.TmpUpload)
 	handler := handlers.NewHandler(repository, service)
 
 	router := mux.NewRouter()
@@ -44,8 +44,11 @@ func main() {
 	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(handler.HandleDeleteFolder)).Methods("DELETE")
 	router.HandleFunc("/users/{id}/folders", handlers.HandleError(handler.HandleDeleteFolder)).Methods("GET")
 
-	router.HandleFunc("/users/{id}/files", handlers.HandleError(handler.HandleUploadFile)).Methods("POST")
-	router.HandleFunc("/users/{id}/files/{fileID}/download", handlers.HandleError(handler.HandleDownloadFile)).Methods("GET")
+	router.HandleFunc("/uploads/init", handlers.HandleError(handler.InitSessionHandler)).Methods("POST")
+	router.HandleFunc("/uploads/{sessionID}/{partNumber}", handlers.HandleError(handler.UploadPartHandler)).Methods("PUT")
+	router.HandleFunc("/uploads/{sessionID}/progress", handlers.HandleError(handler.ProgressHandler)).Methods("GET")
+	router.HandleFunc("/uploads/{sessionID}/complete", handlers.HandleError(handler.CompleteHandler)).Methods("POST")
+	router.HandleFunc("/uploads/{sessionID}", handlers.HandleError(handler.AbortHandler)).Methods("DELETE")
 	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleGetFile)).Methods("GET")
 	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(handler.HandleDeleteFile)).Methods("DELETE")
 	router.HandleFunc("/users/{id}/files", handlers.HandleError(handler.HandleListFiles)).Methods("GET")

@@ -2,9 +2,12 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (u *user) GetByID(ctx context.Context, id int) (*types.User, error) {
@@ -84,4 +87,43 @@ func (u *user) UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int
 		return utils.DetermineSQLError(err, "update used storage data")
 	}
 	return nil
+}
+
+func (r *user) ReserveStorage(ctx context.Context, userID int, size int64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var user types.User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Account").
+			First(&user, "id = ?", userID).Error; err != nil {
+			return err
+		}
+		acct := user.Account
+		if acct.UsedStorage+size > acct.StorageLimit {
+			return fmt.Errorf("quota exceeded: used=%d, limit=%d", acct.UsedStorage, acct.StorageLimit)
+		}
+		return tx.Model(&types.Account{}).
+			Where("user_id = ?", userID).
+			UpdateColumn("used_storage", gorm.Expr("used_storage + ?", size)).
+			Error
+	})
+}
+
+func (r *user) ReleaseStorage(ctx context.Context, userID int, size int64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var user types.User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Account").
+			First(&user, "id = ?", userID).Error; err != nil {
+			return err
+		}
+		acct := user.Account
+		newUsed := acct.UsedStorage - size
+		if newUsed < 0 {
+			newUsed = 0
+		}
+		return tx.Model(&types.Account{}).
+			Where("user_id = ?", userID).
+			UpdateColumn("used_storage", newUsed).
+			Error
+	})
 }

@@ -9,15 +9,27 @@ type file struct {
 	storageDir string
 }
 
-type Service struct {
-	File *file
+type multiPart struct {
+	repository *repositories.Repository
+	storageDir string
+	tmpUpload  string
 }
 
-func NewService(repository *repositories.Repository, storageDir string) *Service {
+type Service struct {
+	File      *file
+	MultiPart *multiPart
+}
+
+func NewService(repository *repositories.Repository, storageDir, tmpUpload string) *Service {
 	return &Service{
 		File: &file{
 			repository: repository,
 			storageDir: storageDir,
+		},
+		MultiPart: &multiPart{
+			repository: repository,
+			storageDir: storageDir,
+			tmpUpload:  tmpUpload,
 		},
 	}
 }
