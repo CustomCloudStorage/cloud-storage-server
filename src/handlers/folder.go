@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (h *Handler) HandleCreateFolder(w http.ResponseWriter, r *http.Request) error {
+func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	log.Println("[POST] Creating folder")
@@ -22,14 +22,14 @@ func (h *Handler) HandleCreateFolder(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	if err := h.Repository.Folder.Create(ctx, &folder); err != nil {
+	if err := h.folderRepository.Create(ctx, &folder); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) HandleGetFolder(w http.ResponseWriter, r *http.Request) error {
+func (h *folderHandler) HandleGetFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -44,7 +44,7 @@ func (h *Handler) HandleGetFolder(w http.ResponseWriter, r *http.Request) error 
 
 	log.Println("[GET] Fetching folder with id:", folderID, " by user:", userID)
 
-	folder, err := h.Repository.Folder.GetByID(ctx, folderID, userID)
+	folder, err := h.folderRepository.GetByID(ctx, folderID, userID)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (h *Handler) HandleGetFolder(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func (h *Handler) HandleUpdateFolder(w http.ResponseWriter, r *http.Request) error {
+func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -77,7 +77,7 @@ func (h *Handler) HandleUpdateFolder(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	folder, err := h.Repository.Folder.GetByID(ctx, folderID, userID)
+	folder, err := h.folderRepository.GetByID(ctx, folderID, userID)
 	if err != nil {
 		return err
 	}
@@ -86,14 +86,14 @@ func (h *Handler) HandleUpdateFolder(w http.ResponseWriter, r *http.Request) err
 		return utils.ErrDataConflict.New("The folder was changed by another user")
 	}
 
-	if err := h.Repository.Folder.Update(ctx, folder); err != nil {
+	if err := h.folderRepository.Update(ctx, folder); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) HandleDeleteFolder(w http.ResponseWriter, r *http.Request) error {
+func (h *folderHandler) HandleDeleteFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -108,14 +108,14 @@ func (h *Handler) HandleDeleteFolder(w http.ResponseWriter, r *http.Request) err
 
 	log.Println("[DELETE] Deleting folder with id:", folderID, " by user:", userID)
 
-	if err := h.Repository.Folder.Delete(ctx, folderID, userID); err != nil {
+	if err := h.folderRepository.Delete(ctx, folderID, userID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) HandleListFolders(w http.ResponseWriter, r *http.Request) error {
+func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -126,7 +126,7 @@ func (h *Handler) HandleListFolders(w http.ResponseWriter, r *http.Request) erro
 
 	log.Println("[GET] Fetching all folders by user:", userID)
 
-	folders, err := h.Repository.Folder.ListByUserID(ctx, userID)
+	folders, err := h.folderRepository.ListByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}

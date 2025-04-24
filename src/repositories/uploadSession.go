@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (r *uploadSession) Create(ctx context.Context, session *types.UploadSession) error {
+func (r *uploadSessionRepository) Create(ctx context.Context, session *types.UploadSession) error {
 	if err := r.db.WithContext(ctx).
 		Create(session).
 		Error; err != nil {
@@ -17,7 +17,7 @@ func (r *uploadSession) Create(ctx context.Context, session *types.UploadSession
 	return nil
 }
 
-func (r *uploadSession) GetByID(ctx context.Context, id uuid.UUID) (*types.UploadSession, error) {
+func (r *uploadSessionRepository) GetByID(ctx context.Context, id uuid.UUID) (*types.UploadSession, error) {
 	var session types.UploadSession
 	if err := r.db.WithContext(ctx).
 		First(&session, "id = ?", id).
@@ -27,7 +27,7 @@ func (r *uploadSession) GetByID(ctx context.Context, id uuid.UUID) (*types.Uploa
 	return &session, nil
 }
 
-func (r *uploadSession) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *uploadSessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.db.WithContext(ctx).
 		Delete(&types.UploadSession{}, "id = ?", id).
 		Error; err != nil {
@@ -36,7 +36,7 @@ func (r *uploadSession) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *uploadSession) ListOlderThan(ctx context.Context, olderThanMinutes int) ([]types.UploadSession, error) {
+func (r *uploadSessionRepository) ListOlderThan(ctx context.Context, olderThanMinutes int) ([]types.UploadSession, error) {
 	var sessions []types.UploadSession
 	if err := r.db.WithContext(ctx).
 		Where("created_at < NOW() - INTERVAL '? minutes'", olderThanMinutes).

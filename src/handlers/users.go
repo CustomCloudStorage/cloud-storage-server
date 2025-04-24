@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (h *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -23,7 +23,7 @@ func (h *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
 		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
 	}
 
-	user, err := h.Repository.User.GetByID(ctx, id)
+	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -37,12 +37,12 @@ func (h *Handler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (h *Handler) HandleListUsers(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	log.Println("[GET] Fetching all users")
 
-	users, err := h.Repository.User.List(ctx)
+	users, err := h.userRepository.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (h *Handler) HandleListUsers(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func (h *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	log.Println("[POST] Creating new user")
@@ -75,7 +75,7 @@ func (h *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error
 	user.Credentials.Password = securePass
 	user.Account.UsedStorage = 0
 
-	if err := h.Repository.User.Create(ctx, &user); err != nil {
+	if err := h.userRepository.Create(ctx, &user); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func (h *Handler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error
 	return nil
 }
 
-func (h *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -103,7 +103,7 @@ func (h *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) er
 		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the profile's struct")
 	}
 
-	user, err := h.Repository.User.GetByID(ctx, id)
+	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (h *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) er
 		return utils.ErrDataConflict.New("The profile was changed by another user")
 	}
 
-	if err := h.Repository.User.UpdateProfile(ctx, &profile, id); err != nil {
+	if err := h.userRepository.UpdateProfile(ctx, &profile, id); err != nil {
 		return err
 	}
 
@@ -123,7 +123,7 @@ func (h *Handler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) er
 	return nil
 }
 
-func (h *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -140,7 +140,7 @@ func (h *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) er
 		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the account's struct")
 	}
 
-	user, err := h.Repository.User.GetByID(ctx, id)
+	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (h *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) er
 		return utils.ErrDataConflict.New("The account was changed by another user")
 	}
 
-	if err := h.Repository.User.UpdateAccount(ctx, &account, id); err != nil {
+	if err := h.userRepository.UpdateAccount(ctx, &account, id); err != nil {
 		return err
 	}
 
@@ -160,7 +160,7 @@ func (h *Handler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) er
 	return nil
 }
 
-func (h *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -184,7 +184,7 @@ func (h *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request
 
 	credentials.Password = securePass
 
-	user, err := h.Repository.User.GetByID(ctx, id)
+	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (h *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request
 		return utils.ErrDataConflict.New("The credentials were changed by another user")
 	}
 
-	if err := h.Repository.User.UpdateCredentials(ctx, &credentials, id); err != nil {
+	if err := h.userRepository.UpdateCredentials(ctx, &credentials, id); err != nil {
 		return err
 	}
 
@@ -204,7 +204,7 @@ func (h *Handler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request
 	return nil
 }
 
-func (h *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error {
+func (h *userHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -216,19 +216,19 @@ func (h *Handler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error
 		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
 	}
 
-	files, err := h.Repository.File.ListByUserID(ctx, id)
+	files, err := h.fileRepository.ListByUserID(ctx, id)
 	if err != nil {
 		return err
 	}
 	if len(files) != 0 {
 		for _, file := range files {
-			if err := h.Service.File.DeleteFile(ctx, file.ID, id); err != nil {
+			if err := h.fileService.DeleteFile(ctx, file.ID, id); err != nil {
 				return err
 			}
 		}
 	}
 
-	if err := h.Repository.User.Delete(ctx, id); err != nil {
+	if err := h.userRepository.Delete(ctx, id); err != nil {
 		return err
 	}
 

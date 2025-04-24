@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (h *Handler) InitSessionHandler(w http.ResponseWriter, r *http.Request) error {
+func (h *uploadHandler) InitSessionHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	var session types.UploadSession
@@ -19,14 +19,14 @@ func (h *Handler) InitSessionHandler(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	if err := h.Service.MultiPart.InitSession(ctx, &session); err != nil {
+	if err := h.uploadService.InitSession(ctx, &session); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) UploadPartHandler(w http.ResponseWriter, r *http.Request) error {
+func (h *uploadHandler) UploadPartHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -39,14 +39,14 @@ func (h *Handler) UploadPartHandler(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	if err := h.Service.MultiPart.UploadPart(ctx, sessionID, partNum, r.Body); err != nil {
+	if err := h.uploadService.UploadPart(ctx, sessionID, partNum, r.Body); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) ProgressHandler(w http.ResponseWriter, r *http.Request) error {
+func (h *uploadHandler) ProgressHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	sessionID, err := uuid.Parse(mux.Vars(r)["sessionID"])
@@ -54,7 +54,7 @@ func (h *Handler) ProgressHandler(w http.ResponseWriter, r *http.Request) error 
 		return err
 	}
 
-	uploaded, total, err := h.Service.MultiPart.GetProgress(ctx, sessionID)
+	uploaded, total, err := h.uploadService.GetProgress(ctx, sessionID)
 	if err != nil {
 		return err
 	}
@@ -68,14 +68,14 @@ func (h *Handler) ProgressHandler(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func (h *Handler) CompleteHandler(w http.ResponseWriter, r *http.Request) error {
+func (h *uploadHandler) CompleteHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	sessionID, err := uuid.Parse(mux.Vars(r)["sessionID"])
 	if err != nil {
 		return err
 	}
-	fileMeta, err := h.Service.MultiPart.Complete(ctx, sessionID)
+	fileMeta, err := h.uploadService.Complete(ctx, sessionID)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (h *Handler) CompleteHandler(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func (h *Handler) AbortHandler(w http.ResponseWriter, r *http.Request) error {
+func (h *uploadHandler) AbortHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	sessionID, err := uuid.Parse(mux.Vars(r)["sessionID"])
@@ -95,7 +95,7 @@ func (h *Handler) AbortHandler(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if err := h.Service.MultiPart.Abort(ctx, sessionID); err != nil {
+	if err := h.uploadService.Abort(ctx, sessionID); err != nil {
 		return err
 	}
 

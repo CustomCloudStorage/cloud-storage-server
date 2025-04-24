@@ -8,51 +8,53 @@ import (
 	"gorm.io/gorm"
 )
 
-type user struct {
+type userRepository struct {
 	db *gorm.DB
 }
 
-type folder struct {
+type fileRepository struct {
 	db *gorm.DB
 }
 
-type file struct {
+type folderRepository struct {
 	db *gorm.DB
 }
 
-type uploadSession struct {
+type uploadSessionRepository struct {
 	db *gorm.DB
 }
 
-type uploadPart struct {
+type uploadPartRepository struct {
 	db *gorm.DB
 }
 
-type Repository struct {
-	User          *user
-	Folder        *folder
-	File          *file
-	UploadSession *uploadSession
-	UploadPart    *uploadPart
+func NewUserRepository(db *gorm.DB) *userRepository {
+	return &userRepository{
+		db: db,
+	}
 }
 
-func NewRepository(db *gorm.DB) *Repository {
-	return &Repository{
-		User: &user{
-			db: db,
-		},
-		Folder: &folder{
-			db: db,
-		},
-		File: &file{
-			db: db,
-		},
-		UploadSession: &uploadSession{
-			db: db,
-		},
-		UploadPart: &uploadPart{
-			db: db,
-		},
+func NewFileRepository(db *gorm.DB) *fileRepository {
+	return &fileRepository{
+		db: db,
+	}
+}
+
+func NewFolderRepository(db *gorm.DB) *folderRepository {
+	return &folderRepository{
+		db: db,
+	}
+}
+
+func NewUploadSessionRepository(db *gorm.DB) *uploadSessionRepository {
+	return &uploadSessionRepository{
+		db: db,
+	}
+}
+
+func NewUploadPartRepository(db *gorm.DB) *uploadPartRepository {
+	return &uploadPartRepository{
+		db: db,
 	}
 }
 
@@ -64,8 +66,18 @@ type UserRepository interface {
 	UpdateCredentials(context.Context, *types.Credentials, int) error
 	Delete(context.Context, int) error
 	List(context.Context) ([]types.User, error)
+	UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int64) error
 	ReserveStorage(ctx context.Context, userID int, size int64) error
 	ReleaseStorage(ctx context.Context, userID int, size int64) error
+}
+
+type FileRepository interface {
+	Create(ctx context.Context, file *types.File) error
+	GetByID(ctx context.Context, id int, userID int) (*types.File, error)
+	Delete(ctx context.Context, id int, userID int) error
+	ListByUserID(ctx context.Context, userID int) ([]types.File, error)
+	UpdateName(ctx context.Context, id int, userID int, name string) error
+	UpdateFolder(ctx context.Context, id int, userID int, folderID int) error
 }
 
 type FolderRepository interface {
@@ -74,15 +86,6 @@ type FolderRepository interface {
 	Update(ctx context.Context, folder *types.Folder) error
 	Delete(ctx context.Context, id int, userID int) error
 	ListByUserID(ctx context.Context, userID int) ([]types.Folder, error)
-}
-
-type FileRepository interface {
-	Create(ctx context.Context, file *types.File) error
-	GetByID(ctx context.Context, id int, userID int) (*types.File, error)
-	Delete(ctx context.Context, id int, userID int) error
-	ListByUserID(ctx context.Context, userID int) ([]types.File, error)
-	UpdateName(ctx context.Context, id int, userID int, name string)
-	UpdateFolder(ctx context.Context, id int, userID int, folderID int)
 }
 
 type UploadSessionRepository interface {

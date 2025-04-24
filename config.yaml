@@ -7,5 +7,6 @@ postgres:
   user: "postgres"
   password: "2153"
   dbname: "postgres"
-storageDir: "../storage"
-tmpUploads: "../tmpUploads"
+service:
+  storageDir: "../storage"
+  tmpUpload: "../tmpUploads"

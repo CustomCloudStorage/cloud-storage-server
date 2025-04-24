@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (h *Handler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
+func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -24,7 +24,7 @@ func (h *Handler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
 
 	log.Println("[GET] Fetching file with id:", fileID, " by user:", userID)
 
-	file, err := h.Repository.File.GetByID(ctx, fileID, userID)
+	file, err := h.fileRepository.GetByID(ctx, fileID, userID)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (h *Handler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (h *Handler) HandleDeleteFile(w http.ResponseWriter, r *http.Request) error {
+func (h *fileHandler) HandleDeleteFile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -51,18 +51,18 @@ func (h *Handler) HandleDeleteFile(w http.ResponseWriter, r *http.Request) error
 
 	log.Println("[DELETE] Deleting file with id:", fileID, " by user:", userID)
 
-	if err := h.Service.File.DeleteFile(ctx, fileID, userID); err != nil {
+	if err := h.fileService.DeleteFile(ctx, fileID, userID); err != nil {
 		return err
 	}
 
-	if err := h.Repository.File.Delete(ctx, fileID, userID); err != nil {
+	if err := h.fileRepository.Delete(ctx, fileID, userID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) HandleListFiles(w http.ResponseWriter, r *http.Request) error {
+func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -73,7 +73,7 @@ func (h *Handler) HandleListFiles(w http.ResponseWriter, r *http.Request) error 
 
 	log.Println("[GET] Fetching all files by user:", userID)
 
-	files, err := h.Repository.File.ListByUserID(ctx, userID)
+	files, err := h.fileRepository.ListByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (h *Handler) HandleListFiles(w http.ResponseWriter, r *http.Request) error 
 	return nil
 }
 
-func (h *Handler) HandleUpdateName(w http.ResponseWriter, r *http.Request) error {
+func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -103,14 +103,14 @@ func (h *Handler) HandleUpdateName(w http.ResponseWriter, r *http.Request) error
 		return err
 	}
 
-	if err := h.Repository.File.UpdateName(ctx, fileID, userID, patchName); err != nil {
+	if err := h.fileRepository.UpdateName(ctx, fileID, userID, patchName); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *Handler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error {
+func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	params := mux.Vars(r)
@@ -128,7 +128,7 @@ func (h *Handler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	if err := h.Repository.File.UpdateFolder(ctx, fileID, userID, patchFolderID); err != nil {
+	if err := h.fileRepository.UpdateFolder(ctx, fileID, userID, patchFolderID); err != nil {
 		return err
 	}
 

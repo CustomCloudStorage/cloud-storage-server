@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (u *user) GetByID(ctx context.Context, id int) (*types.User, error) {
+func (u *userRepository) GetByID(ctx context.Context, id int) (*types.User, error) {
 	var user types.User
 	if err := u.db.WithContext(ctx).
 		Preload("Profile").
@@ -23,14 +23,14 @@ func (u *user) GetByID(ctx context.Context, id int) (*types.User, error) {
 	return &user, nil
 }
 
-func (u *user) Create(ctx context.Context, user *types.User) error {
+func (u *userRepository) Create(ctx context.Context, user *types.User) error {
 	if err := u.db.WithContext(ctx).Create(user).Error; err != nil {
 		return utils.DetermineSQLError(err, "create data")
 	}
 	return nil
 }
 
-func (u *user) UpdateProfile(ctx context.Context, profile *types.Profile, id int) error {
+func (u *userRepository) UpdateProfile(ctx context.Context, profile *types.Profile, id int) error {
 	if err := u.db.WithContext(ctx).
 		Model(&types.Profile{}).
 		Where("user_id = ?", id).
@@ -40,7 +40,7 @@ func (u *user) UpdateProfile(ctx context.Context, profile *types.Profile, id int
 	return nil
 }
 
-func (u *user) UpdateAccount(ctx context.Context, account *types.Account, id int) error {
+func (u *userRepository) UpdateAccount(ctx context.Context, account *types.Account, id int) error {
 	if err := u.db.WithContext(ctx).
 		Model(&types.Account{}).
 		Where("user_id = ?", id).
@@ -50,7 +50,7 @@ func (u *user) UpdateAccount(ctx context.Context, account *types.Account, id int
 	return nil
 }
 
-func (u *user) UpdateCredentials(ctx context.Context, credentials *types.Credentials, id int) error {
+func (u *userRepository) UpdateCredentials(ctx context.Context, credentials *types.Credentials, id int) error {
 	if err := u.db.WithContext(ctx).
 		Model(&types.Credentials{}).
 		Where("user_id = ?", id).
@@ -60,14 +60,14 @@ func (u *user) UpdateCredentials(ctx context.Context, credentials *types.Credent
 	return nil
 }
 
-func (u *user) Delete(ctx context.Context, id int) error {
+func (u *userRepository) Delete(ctx context.Context, id int) error {
 	if err := u.db.WithContext(ctx).Delete(&types.User{}, id).Error; err != nil {
 		return utils.DetermineSQLError(err, "delete user data")
 	}
 	return nil
 }
 
-func (u *user) List(ctx context.Context) ([]types.User, error) {
+func (u *userRepository) List(ctx context.Context) ([]types.User, error) {
 	var users []types.User
 	if err := u.db.WithContext(ctx).
 		Preload("Profile").
@@ -79,7 +79,7 @@ func (u *user) List(ctx context.Context) ([]types.User, error) {
 	return users, nil
 }
 
-func (u *user) UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int64) error {
+func (u *userRepository) UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int64) error {
 	if err := u.db.WithContext(ctx).
 		Model(&types.Account{}).
 		Where("user_id = ?", id).
@@ -89,7 +89,7 @@ func (u *user) UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int
 	return nil
 }
 
-func (r *user) ReserveStorage(ctx context.Context, userID int, size int64) error {
+func (r *userRepository) ReserveStorage(ctx context.Context, userID int, size int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var user types.User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -108,7 +108,7 @@ func (r *user) ReserveStorage(ctx context.Context, userID int, size int64) error
 	})
 }
 
-func (r *user) ReleaseStorage(ctx context.Context, userID int, size int64) error {
+func (r *userRepository) ReleaseStorage(ctx context.Context, userID int, size int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var user types.User
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).

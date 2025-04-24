@@ -2,17 +2,17 @@ package config
 
 import (
 	"github.com/CustomCloudStorage/databases"
+	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/go-playground/validator"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Port       string `validate:"required"`
-	Cors       CORSConfig
-	Postgres   databases.PostgresConfig `validate:"required"`
-	StorageDir string                   `validate:"required"`
-	TmpUpload  string                   `validate:"required"`
+	Port     string `validate:"required"`
+	Cors     CORSConfig
+	Postgres databases.PostgresConfig `validate:"required"`
+	Service  services.ServiceConfig   `validate:"required"`
 }
 
 type CORSConfig struct {

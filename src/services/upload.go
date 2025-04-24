@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -11,14 +11,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *multiPart) InitSession(ctx context.Context, session *types.UploadSession) error {
-	if err := s.repository.User.ReserveStorage(ctx, session.UserID, session.TotalSize); err != nil {
+func (s *uploadService) InitSession(ctx context.Context, session *types.UploadSession) error {
+	if err := s.userRepository.ReserveStorage(ctx, session.UserID, session.TotalSize); err != nil {
 		return err
 	}
 
 	id := uuid.New()
 	session.ID = id
-	if err := s.repository.UploadSession.Create(ctx, session); err != nil {
+	if err := s.uploadSessionRepository.Create(ctx, session); err != nil {
 		return err
 	}
 
@@ -29,8 +29,8 @@ func (s *multiPart) InitSession(ctx context.Context, session *types.UploadSessio
 	return nil
 }
 
-func (s *multiPart) UploadPart(ctx context.Context, sessionID uuid.UUID, partNumber int, data io.Reader) error {
-	session, err := s.repository.UploadSession.GetByID(ctx, sessionID)
+func (s *uploadService) UploadPart(ctx context.Context, sessionID uuid.UUID, partNumber int, data io.Reader) error {
+	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
 		return fmt.Errorf("get session: %w", err)
 	}
@@ -55,18 +55,18 @@ func (s *multiPart) UploadPart(ctx context.Context, sessionID uuid.UUID, partNum
 		PartNumber: partNumber,
 		Size:       n,
 	}
-	if err := s.repository.UploadPart.Create(ctx, part); err != nil {
+	if err := s.uploadPartRepository.Create(ctx, part); err != nil {
 		return fmt.Errorf("save part metadata: %w", err)
 	}
 	return nil
 }
 
-func (s *multiPart) GetProgress(ctx context.Context, sessionID uuid.UUID) (int64, int, error) {
-	session, err := s.repository.UploadSession.GetByID(ctx, sessionID)
+func (s *uploadService) GetProgress(ctx context.Context, sessionID uuid.UUID) (int64, int, error) {
+	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
 		return 0, 0, fmt.Errorf("get session: %w", err)
 	}
-	parts, err := s.repository.UploadPart.ListBySession(ctx, sessionID)
+	parts, err := s.uploadPartRepository.ListBySession(ctx, sessionID)
 	if err != nil {
 		return 0, 0, fmt.Errorf("list parts: %w", err)
 	}
@@ -77,8 +77,8 @@ func (s *multiPart) GetProgress(ctx context.Context, sessionID uuid.UUID) (int64
 	return total, session.TotalParts, nil
 }
 
-func (s *multiPart) Complete(ctx context.Context, sessionID uuid.UUID) (*types.File, error) {
-	session, err := s.repository.UploadSession.GetByID(ctx, sessionID)
+func (s *uploadService) Complete(ctx context.Context, sessionID uuid.UUID) (*types.File, error) {
+	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("get session: %w", err)
 	}
@@ -112,48 +112,48 @@ func (s *multiPart) Complete(ctx context.Context, sessionID uuid.UUID) (*types.F
 		Size:         session.TotalSize,
 		PhysicalName: physical,
 	}
-	if err := s.repository.File.Create(ctx, fileMeta); err != nil {
-		if err := s.repository.User.ReleaseStorage(ctx, session.UserID, session.TotalSize); err != nil {
+	if err := s.fileRepository.Create(ctx, fileMeta); err != nil {
+		if err := s.userRepository.ReleaseStorage(ctx, session.UserID, session.TotalSize); err != nil {
 			return nil, err
 		}
 		return nil, fmt.Errorf("save file metadata: %w", err)
 	}
 
-	user, err := s.repository.User.GetByID(ctx, session.UserID)
+	user, err := s.userRepository.GetByID(ctx, session.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
-	if err := s.repository.User.UpdateUsedStorage(ctx, session.UserID, user.Account.UsedStorage+fileMeta.Size); err != nil {
+	if err := s.userRepository.UpdateUsedStorage(ctx, session.UserID, user.Account.UsedStorage+fileMeta.Size); err != nil {
 		return nil, fmt.Errorf("update used_storage: %w", err)
 	}
 
 	if err := os.RemoveAll(filepath.Join(s.tmpUpload, sessionID.String())); err != nil {
 		return nil, err
 	}
-	if err := s.repository.UploadPart.DeleteBySession(ctx, sessionID); err != nil {
+	if err := s.uploadPartRepository.DeleteBySession(ctx, sessionID); err != nil {
 		return nil, err
 	}
-	if err := s.repository.UploadSession.Delete(ctx, sessionID); err != nil {
+	if err := s.uploadSessionRepository.Delete(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
 	return fileMeta, nil
 }
 
-func (s *multiPart) Abort(ctx context.Context, sessionID uuid.UUID) error {
-	session, err := s.repository.UploadSession.GetByID(ctx, sessionID)
+func (s *uploadService) Abort(ctx context.Context, sessionID uuid.UUID) error {
+	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
 		return err
 	}
-	if err := s.repository.User.ReleaseStorage(ctx, session.UserID, session.TotalSize); err != nil {
+	if err := s.userRepository.ReleaseStorage(ctx, session.UserID, session.TotalSize); err != nil {
 		return err
 	}
 
 	os.RemoveAll(filepath.Join(s.tmpUpload, sessionID.String()))
-	if err := s.repository.UploadPart.DeleteBySession(ctx, sessionID); err != nil {
+	if err := s.uploadPartRepository.DeleteBySession(ctx, sessionID); err != nil {
 		return fmt.Errorf("delete parts metadata: %w", err)
 	}
-	if err := s.repository.UploadSession.Delete(ctx, sessionID); err != nil {
+	if err := s.uploadSessionRepository.Delete(ctx, sessionID); err != nil {
 		return fmt.Errorf("delete session metadata: %w", err)
 	}
 	return nil
