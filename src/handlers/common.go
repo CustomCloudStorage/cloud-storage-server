@@ -24,6 +24,7 @@ type fileHandler struct {
 
 type folderHandler struct {
 	folderRepository repositories.FolderRepository
+	folderService    services.FolderService
 }
 
 type uploadHandler struct {
@@ -45,9 +46,10 @@ func NewFileHandler(fileRepository repositories.FileRepository, fileService serv
 	}
 }
 
-func NewFolderHandler(folderRepository repositories.FolderRepository) *folderHandler {
+func NewFolderHandler(folderRepository repositories.FolderRepository, folderService services.FolderService) *folderHandler {
 	return &folderHandler{
 		folderRepository: folderRepository,
+		folderService:    folderService,
 	}
 }
 
@@ -83,6 +85,7 @@ type FolderHandler interface {
 	HandleUpdateFolder(w http.ResponseWriter, r *http.Request) error
 	HandleDeleteFolder(w http.ResponseWriter, r *http.Request) error
 	HandleListFolders(w http.ResponseWriter, r *http.Request) error
+	DownloadFolderHandler(w http.ResponseWriter, r *http.Request) error
 }
 
 type UploadHandler interface {

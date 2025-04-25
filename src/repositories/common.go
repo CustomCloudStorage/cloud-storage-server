@@ -78,6 +78,7 @@ type FileRepository interface {
 	ListByUserID(ctx context.Context, userID int) ([]types.File, error)
 	UpdateName(ctx context.Context, id int, userID int, name string) error
 	UpdateFolder(ctx context.Context, id int, userID int, folderID int) error
+	ListFilesRecursive(ctx context.Context, userID, folderID int) ([]*types.FileWithPath, error)
 }
 
 type FolderRepository interface {

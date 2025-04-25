@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -132,6 +133,26 @@ func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := json.NewEncoder(w).Encode(folders); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *folderHandler) DownloadFolderHandler(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+	userID, _ := strconv.Atoi(vars["userID"])
+	folderID, _ := strconv.Atoi(vars["folderID"])
+
+	reader, archiveName, err := h.folderService.DownloadFolder(r.Context(), userID, folderID)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", `attachment; filename="`+archiveName+`"`)
+	if _, err := io.Copy(w, reader); err != nil {
 		return err
 	}
 

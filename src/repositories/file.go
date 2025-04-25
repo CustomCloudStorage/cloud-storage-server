@@ -69,3 +69,35 @@ func (r *fileRepository) UpdateFolder(ctx context.Context, id int, userID int, f
 	}
 	return nil
 }
+
+func (r *fileRepository) ListFilesRecursive(ctx context.Context, userID, folderID int) ([]*types.FileWithPath, error) {
+	const sql = `
+WITH RECURSIVE folders_cte AS (
+    SELECT id, name, parent_id, name AS path
+	FROM folders
+	WHERE user_id = @user AND id = @root
+
+UNION ALL
+
+    SELECT f.id, f.name, f.parent_id, folders_cte.path || '/' || f.name
+	FROM folders f
+	JOIN folders_cte ON f.parent_id = folders_cte.id
+	WHERE f.user_id = @user
+)
+SELECT
+    fi.physical_name,
+    folders_cte.path || '/' || fi.name || fi.extension AS relative_path
+	FROM folders_cte
+	JOIN files fi ON fi.folder_id = folders_cte.id
+	WHERE fi.user_id = @user;
+`
+	var out []*types.FileWithPath
+	if err := r.db.WithContext(ctx).
+		Raw(sql,
+			map[string]interface{}{"user": userID, "root": folderID},
+		).
+		Scan(&out).Error; err != nil {
+		return nil, err
+	}
+	return out, nil
+}

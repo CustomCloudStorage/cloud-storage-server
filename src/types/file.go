@@ -25,3 +25,7 @@ type DownloadedFile struct {
 	FileSize    int64
 	ModTime     time.Time
 }
+type FileWithPath struct {
+	PhysicalName string `gorm:"column:physical_name"`
+	RelativePath string `gorm:"column:relative_path"`
+}

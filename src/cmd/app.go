@@ -31,11 +31,12 @@ func main() {
 	uploadPartRepo := repositories.NewUploadPartRepository(postgresDB)
 
 	fileService := services.NewFileService(userRepo, fileRepo, folderRepo, cfg.Service)
+	folderService := services.NewFolderService(fileRepo, folderRepo, cfg.Service)
 	uploadService := services.NewUploadService(userRepo, fileRepo, uploadSessionRepo, uploadPartRepo, cfg.Service)
 
 	userHandler := handlers.NewUserHandler(userRepo, fileRepo, fileService)
 	fileHandler := handlers.NewFileHandler(fileRepo, fileService)
-	folderHandler := handlers.NewFolderHandler(folderRepo)
+	folderHandler := handlers.NewFolderHandler(folderRepo, folderService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
 
 	router := mux.NewRouter()
@@ -53,6 +54,7 @@ func main() {
 	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleUpdateFolder)).Methods("PUT")
 	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleDeleteFolder)).Methods("DELETE")
 	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleDeleteFolder)).Methods("GET")
+	router.HandleFunc("/users/{userID}/folders/{folderID}/download", handlers.HandleError(folderHandler.DownloadFolderHandler)).Methods("GET")
 
 	router.HandleFunc("/uploads/init", handlers.HandleError(uploadHandler.InitSessionHandler)).Methods("POST")
 	router.HandleFunc("/uploads/{sessionID}/{partNumber}", handlers.HandleError(uploadHandler.UploadPartHandler)).Methods("PUT")

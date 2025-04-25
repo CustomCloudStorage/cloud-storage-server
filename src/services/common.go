@@ -28,6 +28,12 @@ type fileService struct {
 	host             string
 }
 
+type folderService struct {
+	folderRepository repositories.FolderRepository
+	fileRepository   repositories.FileRepository
+	storageDir       string
+}
+
 type uploadService struct {
 	userRepository          repositories.UserRepository
 	fileRepository          repositories.FileRepository
@@ -49,6 +55,14 @@ func NewFileService(userRepo repositories.UserRepository, fileRepo repositories.
 	}
 }
 
+func NewFolderService(fileRepo repositories.FileRepository, folderRepo repositories.FolderRepository, cfg ServiceConfig) *folderService {
+	return &folderService{
+		fileRepository:   fileRepo,
+		folderRepository: folderRepo,
+		storageDir:       cfg.StorageDir,
+	}
+}
+
 func NewUploadService(userRepo repositories.UserRepository, fileRepo repositories.FileRepository, uploadSessionRepo repositories.UploadSessionRepository, uploadPartRepo repositories.UploadPartRepository, cfg ServiceConfig) *uploadService {
 	return &uploadService{
 		userRepository:          userRepo,
@@ -65,6 +79,10 @@ type FileService interface {
 	ValidateDownloadToken(token string) (userID, fileID int, err error)
 	DownloadFile(ctx context.Context, userID int, fileID int) (*types.DownloadedFile, error)
 	DeleteFile(ctx context.Context, id int, userID int) error
+}
+
+type FolderService interface {
+	DownloadFolder(ctx context.Context, userID, folderID int) (io.ReadCloser, string, error)
 }
 
 type UploadService interface {
