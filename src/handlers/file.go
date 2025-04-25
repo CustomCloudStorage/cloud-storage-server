@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -131,6 +132,42 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 	if err := h.fileRepository.UpdateFolder(ctx, fileID, userID, patchFolderID); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+	userID, _ := strconv.Atoi(vars["userID"])
+	fileID, _ := strconv.Atoi(vars["fileID"])
+
+	url, err := h.fileService.GenerateDownloadURL(r.Context(), userID, fileID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"download_url":"` + url + `"}`))
+
+	return nil
+}
+
+func (h *fileHandler) DownloadByTokenHandler(w http.ResponseWriter, r *http.Request) error {
+	token := r.URL.Query().Get("token")
+	userID, fileID, err := h.fileService.ValidateDownloadToken(token)
+	if err != nil {
+		return err
+	}
+
+	dfile, err := h.fileService.DownloadFile(r.Context(), userID, fileID)
+	if err != nil {
+		return err
+	}
+	defer dfile.Reader.(io.Closer).Close()
+
+	w.Header().Set("Content-Type", dfile.ContentType)
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+dfile.FileName+"\"")
+	w.Header().Set("Content-Length", strconv.FormatInt(dfile.FileSize, 10))
 
 	return nil
 }

@@ -73,6 +73,8 @@ type FileHandler interface {
 	HandleListFiles(w http.ResponseWriter, r *http.Request) error
 	HandleUpdateName(w http.ResponseWriter, r *http.Request) error
 	HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error
+	DownloadURLHandler(w http.ResponseWriter, r *http.Request) error
+	DownloadByTokenHandler(w http.ResponseWriter, r *http.Request) error
 }
 
 type FolderHandler interface {

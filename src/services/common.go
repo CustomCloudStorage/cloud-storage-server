@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/types"
@@ -10,8 +11,11 @@ import (
 )
 
 type ServiceConfig struct {
-	StorageDir string
-	TmpUpload  string
+	StorageDir    string
+	TmpUpload     string
+	Secret        string
+	UrlTtlSeconds time.Duration
+	Host          string
 }
 
 type fileService struct {
@@ -19,6 +23,9 @@ type fileService struct {
 	fileRepository   repositories.FileRepository
 	folderRepository repositories.FolderRepository
 	storageDir       string
+	secret           string
+	urlTtlSeconds    time.Duration
+	host             string
 }
 
 type uploadService struct {
@@ -36,6 +43,9 @@ func NewFileService(userRepo repositories.UserRepository, fileRepo repositories.
 		fileRepository:   fileRepo,
 		folderRepository: folderRepo,
 		storageDir:       cfg.StorageDir,
+		secret:           cfg.Secret,
+		urlTtlSeconds:    cfg.UrlTtlSeconds,
+		host:             cfg.Host,
 	}
 }
 
@@ -51,6 +61,9 @@ func NewUploadService(userRepo repositories.UserRepository, fileRepo repositorie
 }
 
 type FileService interface {
+	GenerateDownloadURL(ctx context.Context, userID, fileID int) (string, error)
+	ValidateDownloadToken(token string) (userID, fileID int, err error)
+	DownloadFile(ctx context.Context, userID int, fileID int) (*types.DownloadedFile, error)
 	DeleteFile(ctx context.Context, id int, userID int) error
 }
 
