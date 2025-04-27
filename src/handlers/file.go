@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -169,5 +170,64 @@ func (h *fileHandler) DownloadByTokenHandler(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+dfile.FileName+"\"")
 	w.Header().Set("Content-Length", strconv.FormatInt(dfile.FileSize, 10))
 
+	return nil
+}
+
+func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) error {
+	params := mux.Vars(r)
+	fileID, _ := strconv.Atoi(params["fileID"])
+	// надо будет извлечь userID из токена
+
+	dfile, err := h.fileService.DownloadFile(r.Context(), userID, fileID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return err
+	}
+	defer dfile.Reader.(io.Closer).Close()
+
+	ifModifiedSince := r.Header.Get("If-Modified-Since")
+	if t, err := time.Parse(http.TimeFormat, ifModifiedSince); err == nil {
+		if !dfile.ModTime.After(t) {
+			w.WriteHeader(http.StatusNotModified)
+			return err
+		}
+	}
+
+	w.Header().Set("Content-Type", dfile.ContentType)
+	w.Header().Set("Content-Disposition", "inline; filename=\""+dfile.FileName+"\"")
+	w.Header().Set("Last-Modified", dfile.ModTime.UTC().Format(http.TimeFormat))
+	w.Header().Set("Accept-Ranges", "bytes")
+
+	http.ServeContent(w, r, dfile.FileName, dfile.ModTime, dfile.Reader)
+
+	return nil
+}
+
+func (h *fileHandler) PreviewFileHandler(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+	fileID, _ := strconv.Atoi(vars["fileID"])
+	// надо будет извлечь userID из токена
+
+	modTime, err := h.fileService.PreviewFile(r.Context(), userID, fileID, io.Discard)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return err
+	}
+	ifModifiedSince := r.Header.Get("If-Modified-Since")
+	if t, err := time.Parse(http.TimeFormat, ifModifiedSince); err == nil {
+		if !modTime.After(t) {
+			w.WriteHeader(http.StatusNotModified)
+			return err
+		}
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Header().Set("Last-Modified", modTime.UTC().Format(http.TimeFormat))
+
+	_, err = h.fileService.PreviewFile(r.Context(), userID, fileID, w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	return nil
 }

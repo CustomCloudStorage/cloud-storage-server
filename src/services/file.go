@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/CustomCloudStorage/types"
+	"github.com/disintegration/imaging"
 )
 
 const tokenParts = 4
@@ -147,4 +148,72 @@ func (s *fileService) DeleteFile(ctx context.Context, id int, userID int) error 
 	}
 
 	return nil
+}
+
+func (s *fileService) StreamFile(ctx context.Context, userID, fileID int) (*types.DownloadedFile, error) {
+	meta, err := s.fileRepository.GetByID(ctx, fileID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	path := filepath.Join(s.storageDir, meta.PhysicalName)
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	ext := strings.ToLower(meta.Extension)
+	var ctype string
+	switch ext {
+	case ".jpg", ".jpeg":
+		ctype = "image/jpeg"
+	case ".png":
+		ctype = "image/png"
+	case ".gif":
+		ctype = "image/gif"
+	case ".mp4":
+		ctype = "video/mp4"
+	case ".webm":
+		ctype = "video/webm"
+	case ".pdf":
+		ctype = "application/pdf"
+	default:
+		buf := make([]byte, 512)
+		n, _ := f.Read(buf)
+		ctype = http.DetectContentType(buf[:n])
+		f.Seek(0, io.SeekStart)
+	}
+
+	return &types.DownloadedFile{
+		Reader:      f,
+		FileName:    meta.Name + meta.Extension,
+		ContentType: ctype,
+		FileSize:    meta.Size,
+		ModTime:     meta.UpdatedAt,
+	}, nil
+}
+
+func (s *fileService) PreviewFile(ctx context.Context, userID, fileID int, w io.Writer) (time.Time, error) {
+	meta, err := s.fileRepository.GetByID(ctx, fileID, userID)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	srcPath := filepath.Join(s.storageDir, meta.PhysicalName)
+	info, err := os.Stat(srcPath)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	img, err := imaging.Open(srcPath)
+	if err != nil {
+		return info.ModTime(), err
+	}
+	preview := imaging.Thumbnail(img, 200, 200, imaging.Lanczos)
+
+	if err := imaging.Encode(w, preview, imaging.JPEG); err != nil {
+		return info.ModTime(), err
+	}
+
+	return info.ModTime(), nil
 }

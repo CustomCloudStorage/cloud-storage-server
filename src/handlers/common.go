@@ -77,6 +77,8 @@ type FileHandler interface {
 	HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error
 	DownloadURLHandler(w http.ResponseWriter, r *http.Request) error
 	DownloadByTokenHandler(w http.ResponseWriter, r *http.Request) error
+	StreamFileHandler(w http.ResponseWriter, r *http.Request) error
+	PreviewFileHandler(w http.ResponseWriter, r *http.Request) error
 }
 
 type FolderHandler interface {
