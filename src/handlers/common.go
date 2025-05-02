@@ -31,6 +31,11 @@ type uploadHandler struct {
 	uploadService services.UploadService
 }
 
+type trashHandler struct {
+	trashRepository repositories.TrashRepository
+	trashService    services.TrashService
+}
+
 func NewUserHandler(userRepository repositories.UserRepository, fileRepository repositories.FileRepository, fileService services.FileService) *userHandler {
 	return &userHandler{
 		userRepository: userRepository,
@@ -56,6 +61,13 @@ func NewFolderHandler(folderRepository repositories.FolderRepository, folderServ
 func NewUploadHandler(uploadService services.UploadService) *uploadHandler {
 	return &uploadHandler{
 		uploadService: uploadService,
+	}
+}
+
+func NewTrashHandler(trashRepo repositories.TrashRepository, trashService services.TrashService) *trashHandler {
+	return &trashHandler{
+		trashRepository: trashRepo,
+		trashService:    trashService,
 	}
 }
 
@@ -96,6 +108,18 @@ type UploadHandler interface {
 	ProgressHandler(w http.ResponseWriter, r *http.Request) error
 	CompleteHandler(w http.ResponseWriter, r *http.Request) error
 	AbortHandler(w http.ResponseWriter, r *http.Request) error
+}
+
+type TrashHandler interface {
+	ListFilesHandler(w http.ResponseWriter, r *http.Request) error
+	DeleteFileHandler(w http.ResponseWriter, r *http.Request) error
+	RestoreFileHandler(w http.ResponseWriter, r *http.Request) error
+	PermanentDeleteFileHandler(w http.ResponseWriter, r *http.Request) error
+
+	ListFoldersHandler(w http.ResponseWriter, r *http.Request) error
+	DeleteFolderHandler(w http.ResponseWriter, r *http.Request) error
+	RestoreFolderHandler(w http.ResponseWriter, r *http.Request) error
+	PermanentDeleteFolderHandler(w http.ResponseWriter, r *http.Request) error
 }
 
 type HandlerWithErrorFunc func(w http.ResponseWriter, r *http.Request) error

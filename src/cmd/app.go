@@ -52,8 +52,7 @@ func main() {
 	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleCreateFolder)).Methods("POST")
 	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleGetFolder)).Methods("GET")
 	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleUpdateFolder)).Methods("PUT")
-	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleDeleteFolder)).Methods("DELETE")
-	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleDeleteFolder)).Methods("GET")
+	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleListFolders)).Methods("GET")
 	router.HandleFunc("/users/{userID}/folders/{folderID}/download", handlers.HandleError(folderHandler.DownloadFolderHandler)).Methods("GET")
 
 	router.HandleFunc("/uploads/init", handlers.HandleError(uploadHandler.InitSessionHandler)).Methods("POST")
@@ -63,7 +62,6 @@ func main() {
 	router.HandleFunc("/uploads/{sessionID}", handlers.HandleError(uploadHandler.AbortHandler)).Methods("DELETE")
 
 	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(fileHandler.HandleGetFile)).Methods("GET")
-	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(fileHandler.HandleDeleteFile)).Methods("DELETE")
 	router.HandleFunc("/users/{id}/files", handlers.HandleError(fileHandler.HandleListFiles)).Methods("GET")
 	router.HandleFunc("/users/{id}/files/{fileID}/name", handlers.HandleError(fileHandler.HandleUpdateName)).Methods("PUT")
 	router.HandleFunc("/users/{id}/files/{fileID}/folderID", handlers.HandleError(fileHandler.HandleUpdateFolderID)).Methods("PUT")

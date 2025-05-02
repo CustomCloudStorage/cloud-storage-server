@@ -18,6 +18,11 @@ type ServiceConfig struct {
 	Host          string
 }
 
+type TrashConfig struct {
+	TTL             time.Duration
+	CleanupInterval time.Duration
+}
+
 type fileService struct {
 	userRepository   repositories.UserRepository
 	fileRepository   repositories.FileRepository
@@ -41,6 +46,12 @@ type uploadService struct {
 	uploadPartRepository    repositories.UploadPartRepository
 	storageDir              string
 	tmpUpload               string
+}
+
+type trashService struct {
+	trashRepository repositories.TrashRepository
+	storageDir      string
+	cfg             TrashConfig
 }
 
 func NewFileService(userRepo repositories.UserRepository, fileRepo repositories.FileRepository, folderRepo repositories.FolderRepository, cfg ServiceConfig) *fileService {
@@ -74,6 +85,16 @@ func NewUploadService(userRepo repositories.UserRepository, fileRepo repositorie
 	}
 }
 
+func NewTrashService(trashRepo repositories.TrashRepository, cfg ServiceConfig, trashCfg TrashConfig) *trashService {
+	svc := &trashService{
+		trashRepository: trashRepo,
+		storageDir:      cfg.StorageDir,
+		cfg:             trashCfg,
+	}
+	go svc.purgeLoop()
+	return svc
+}
+
 type FileService interface {
 	GenerateDownloadURL(ctx context.Context, userID, fileID int) (string, error)
 	ValidateDownloadToken(token string) (userID, fileID int, err error)
@@ -93,4 +114,10 @@ type UploadService interface {
 	GetProgress(ctx context.Context, sessionID uuid.UUID) (int64, int, error)
 	Complete(ctx context.Context, sessionID uuid.UUID) (*types.File, error)
 	Abort(ctx context.Context, sessionID uuid.UUID) error
+}
+
+type TrashService interface {
+	purgeLoop()
+	PermanentDeleteFile(ctx context.Context, userID, fileID int) error
+	PermanentDeleteFolder(ctx context.Context, userID, folderID int) error
 }

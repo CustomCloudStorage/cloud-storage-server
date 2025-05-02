@@ -31,15 +31,6 @@ func (r *fileRepository) Update(ctx context.Context, file *types.File) error {
 	return nil
 }
 
-func (r *fileRepository) Delete(ctx context.Context, id int, userID int) error {
-	if err := r.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", id, userID).
-		Delete(&types.File{}).Error; err != nil {
-		return utils.DetermineSQLError(err, "delete data")
-	}
-	return nil
-}
-
 func (r *fileRepository) ListByUserID(ctx context.Context, userID int) ([]types.File, error) {
 	var files []types.File
 	if err := r.db.WithContext(ctx).

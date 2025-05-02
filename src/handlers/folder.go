@@ -94,28 +94,6 @@ func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-func (h *folderHandler) HandleDeleteFolder(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-
-	params := mux.Vars(r)
-	userID, err := strconv.Atoi(params["id"])
-	if err != nil {
-		return err
-	}
-	folderID, err := strconv.Atoi(params["folderID"])
-	if err != nil {
-		return err
-	}
-
-	log.Println("[DELETE] Deleting folder with id:", folderID, " by user:", userID)
-
-	if err := h.folderRepository.Delete(ctx, folderID, userID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 

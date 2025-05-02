@@ -31,15 +31,6 @@ func (r *folderRepository) Update(ctx context.Context, folder *types.Folder) err
 	return nil
 }
 
-func (r *folderRepository) Delete(ctx context.Context, id int, userID int) error {
-	if err := r.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", id, userID).
-		Delete(&types.Folder{}).Error; err != nil {
-		return utils.DetermineSQLError(err, "delete data")
-	}
-	return nil
-}
-
 func (r *folderRepository) ListByUserID(ctx context.Context, userID int) ([]types.Folder, error) {
 	var folders []types.Folder
 	if err := r.db.WithContext(ctx).

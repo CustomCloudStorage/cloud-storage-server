@@ -38,32 +38,6 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 	return nil
 }
 
-func (h *fileHandler) HandleDeleteFile(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-
-	params := mux.Vars(r)
-	userID, err := strconv.Atoi(params["id"])
-	if err != nil {
-		return err
-	}
-	fileID, err := strconv.Atoi(params["fileID"])
-	if err != nil {
-		return err
-	}
-
-	log.Println("[DELETE] Deleting file with id:", fileID, " by user:", userID)
-
-	if err := h.fileService.DeleteFile(ctx, fileID, userID); err != nil {
-		return err
-	}
-
-	if err := h.fileRepository.Delete(ctx, fileID, userID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 

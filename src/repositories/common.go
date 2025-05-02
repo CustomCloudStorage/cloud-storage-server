@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/google/uuid"
@@ -25,6 +26,10 @@ type uploadSessionRepository struct {
 }
 
 type uploadPartRepository struct {
+	db *gorm.DB
+}
+
+type trashRepository struct {
 	db *gorm.DB
 }
 
@@ -58,6 +63,12 @@ func NewUploadPartRepository(db *gorm.DB) *uploadPartRepository {
 	}
 }
 
+func NewTrashRepository(db *gorm.DB) *trashRepository {
+	return &trashRepository{
+		db: db,
+	}
+}
+
 type UserRepository interface {
 	GetByID(context.Context, int) (*types.User, error)
 	Create(context.Context, *types.User) error
@@ -74,7 +85,6 @@ type UserRepository interface {
 type FileRepository interface {
 	Create(ctx context.Context, file *types.File) error
 	GetByID(ctx context.Context, id int, userID int) (*types.File, error)
-	Delete(ctx context.Context, id int, userID int) error
 	ListByUserID(ctx context.Context, userID int) ([]types.File, error)
 	UpdateName(ctx context.Context, id int, userID int, name string) error
 	UpdateFolder(ctx context.Context, id int, userID int, folderID int) error
@@ -85,7 +95,6 @@ type FolderRepository interface {
 	Create(ctx context.Context, file *types.Folder) error
 	GetByID(ctx context.Context, id int, userID int) (*types.Folder, error)
 	Update(ctx context.Context, folder *types.Folder) error
-	Delete(ctx context.Context, id int, userID int) error
 	ListByUserID(ctx context.Context, userID int) ([]types.Folder, error)
 }
 
@@ -100,4 +109,20 @@ type UploadPartRepository interface {
 	Create(ctx context.Context, part *types.UploadPart) error
 	ListBySession(ctx context.Context, sessionID uuid.UUID) ([]types.UploadPart, error)
 	DeleteBySession(ctx context.Context, sessionID uuid.UUID) error
+}
+
+type TrashRepository interface {
+	SoftDeleteFile(ctx context.Context, userID, fileID int, ts time.Time) error
+	RestoreFile(ctx context.Context, userID, fileID int) error
+	ListTrashedFiles(ctx context.Context, userID int) ([]*types.File, error)
+	ListFilesToPurge(ctx context.Context, before time.Time) ([]*types.File, error)
+	HardDeleteFileByID(ctx context.Context, fileID int) error
+	PermanentDeleteFile(ctx context.Context, userID, fileID int) (string, error)
+
+	SoftDeleteFolderCascade(ctx context.Context, userID, folderID int, ts time.Time) error
+	RestoreFolderCascade(ctx context.Context, userID, folderID int) error
+	ListTrashedFolders(ctx context.Context, userID int) ([]*types.Folder, error)
+	ListFoldersToPurge(ctx context.Context, before time.Time) ([]*types.Folder, error)
+	HardDeleteFolderByID(ctx context.Context, folderID int) error
+	PermanentDeleteFolder(ctx context.Context, userID, folderID int) ([]string, error)
 }
