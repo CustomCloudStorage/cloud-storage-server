@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/google/uuid"
@@ -22,7 +23,7 @@ func (s *uploadService) InitSession(ctx context.Context, session *types.UploadSe
 		return err
 	}
 
-	path := filepath.Join(s.tmpUpload, id.String())
+	path := filepath.Join(s.temp, id.String())
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		return fmt.Errorf("mkdir tmp session dir: %w", err)
 	}
@@ -38,7 +39,7 @@ func (s *uploadService) UploadPart(ctx context.Context, sessionID uuid.UUID, par
 		return fmt.Errorf("invalid part number %d", partNumber)
 	}
 
-	partPath := filepath.Join(s.tmpUpload, sessionID.String(), fmt.Sprintf("%05d.part", partNumber))
+	partPath := filepath.Join(s.temp, sessionID.String(), fmt.Sprintf("%05d.part", partNumber))
 	f, err := os.Create(partPath)
 	if err != nil {
 		return fmt.Errorf("create part file: %w", err)
@@ -92,7 +93,7 @@ func (s *uploadService) Complete(ctx context.Context, sessionID uuid.UUID) (*typ
 	defer out.Close()
 
 	for i := 1; i <= session.TotalParts; i++ {
-		partPath := filepath.Join(s.tmpUpload, sessionID.String(), fmt.Sprintf("%05d.part", i))
+		partPath := filepath.Join(s.temp, sessionID.String(), fmt.Sprintf("%05d.part", i))
 		in, err := os.Open(partPath)
 		if err != nil {
 			return nil, fmt.Errorf("open part %d: %w", i, err)
@@ -127,7 +128,7 @@ func (s *uploadService) Complete(ctx context.Context, sessionID uuid.UUID) (*typ
 		return nil, fmt.Errorf("update used_storage: %w", err)
 	}
 
-	if err := os.RemoveAll(filepath.Join(s.tmpUpload, sessionID.String())); err != nil {
+	if err := os.RemoveAll(filepath.Join(s.temp, sessionID.String())); err != nil {
 		return nil, err
 	}
 	if err := s.uploadPartRepository.DeleteBySession(ctx, sessionID); err != nil {
@@ -149,7 +150,7 @@ func (s *uploadService) Abort(ctx context.Context, sessionID uuid.UUID) error {
 		return err
 	}
 
-	os.RemoveAll(filepath.Join(s.tmpUpload, sessionID.String()))
+	os.RemoveAll(filepath.Join(s.temp, sessionID.String()))
 	if err := s.uploadPartRepository.DeleteBySession(ctx, sessionID); err != nil {
 		return fmt.Errorf("delete parts metadata: %w", err)
 	}
@@ -157,4 +158,30 @@ func (s *uploadService) Abort(ctx context.Context, sessionID uuid.UUID) error {
 		return fmt.Errorf("delete session metadata: %w", err)
 	}
 	return nil
+}
+
+func (s *uploadService) purgeLoop() {
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+	for range ticker.C {
+		s.purgeOnce()
+	}
+}
+
+func (s *uploadService) purgeOnce() {
+	sessions, err := s.uploadSessionRepository.ListOlderThan(context.Background(), 7*24*time.Hour)
+	if err != nil {
+		fmt.Printf("upload GC: cannot list stale sessions: %v\n", err)
+		return
+	}
+
+	for _, sess := range sessions {
+		dir := filepath.Join(s.temp, sess.ID.String())
+		if err := os.RemoveAll(dir); err != nil {
+			fmt.Printf("upload GC: remove tmp dir %s: %v\n", dir, err)
+		}
+		if err := s.uploadSessionRepository.Delete(context.Background(), sess.ID); err != nil {
+			fmt.Printf("upload GC: delete session %s: %v\n", sess.ID, err)
+		}
+	}
 }

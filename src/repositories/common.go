@@ -102,7 +102,7 @@ type UploadSessionRepository interface {
 	Create(ctx context.Context, session *types.UploadSession) error
 	GetByID(ctx context.Context, id uuid.UUID) (*types.UploadSession, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	ListOlderThan(ctx context.Context, olderThanMinutes int) ([]types.UploadSession, error)
+	ListOlderThan(ctx context.Context, olderThan time.Duration) ([]types.UploadSession, error)
 }
 
 type UploadPartRepository interface {

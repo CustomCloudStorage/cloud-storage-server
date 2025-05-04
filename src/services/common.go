@@ -12,15 +12,10 @@ import (
 
 type ServiceConfig struct {
 	StorageDir    string
-	TmpUpload     string
+	Temp          string
 	Secret        string
 	UrlTtlSeconds time.Duration
 	Host          string
-}
-
-type TrashConfig struct {
-	TTL             time.Duration
-	CleanupInterval time.Duration
 }
 
 type fileService struct {
@@ -45,13 +40,12 @@ type uploadService struct {
 	uploadSessionRepository repositories.UploadSessionRepository
 	uploadPartRepository    repositories.UploadPartRepository
 	storageDir              string
-	tmpUpload               string
+	temp                    string
 }
 
 type trashService struct {
 	trashRepository repositories.TrashRepository
 	storageDir      string
-	cfg             TrashConfig
 }
 
 func NewFileService(userRepo repositories.UserRepository, fileRepo repositories.FileRepository, folderRepo repositories.FolderRepository, cfg ServiceConfig) *fileService {
@@ -75,21 +69,22 @@ func NewFolderService(fileRepo repositories.FileRepository, folderRepo repositor
 }
 
 func NewUploadService(userRepo repositories.UserRepository, fileRepo repositories.FileRepository, uploadSessionRepo repositories.UploadSessionRepository, uploadPartRepo repositories.UploadPartRepository, cfg ServiceConfig) *uploadService {
-	return &uploadService{
+	svc := &uploadService{
 		userRepository:          userRepo,
 		fileRepository:          fileRepo,
 		uploadSessionRepository: uploadSessionRepo,
 		uploadPartRepository:    uploadPartRepo,
 		storageDir:              cfg.StorageDir,
-		tmpUpload:               cfg.TmpUpload,
+		temp:                    cfg.Temp,
 	}
+	go svc.purgeLoop()
+	return svc
 }
 
-func NewTrashService(trashRepo repositories.TrashRepository, cfg ServiceConfig, trashCfg TrashConfig) *trashService {
+func NewTrashService(trashRepo repositories.TrashRepository, cfg ServiceConfig) *trashService {
 	svc := &trashService{
 		trashRepository: trashRepo,
 		storageDir:      cfg.StorageDir,
-		cfg:             trashCfg,
 	}
 	go svc.purgeLoop()
 	return svc
@@ -117,7 +112,6 @@ type UploadService interface {
 }
 
 type TrashService interface {
-	purgeLoop()
 	PermanentDeleteFile(ctx context.Context, userID, fileID int) error
 	PermanentDeleteFolder(ctx context.Context, userID, folderID int) error
 }

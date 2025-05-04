@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
@@ -29,19 +30,22 @@ func (r *uploadSessionRepository) GetByID(ctx context.Context, id uuid.UUID) (*t
 
 func (r *uploadSessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.db.WithContext(ctx).
-		Delete(&types.UploadSession{}, "id = ?", id).
+		Unscoped().
+		Where("id = ?", id).
+		Delete(&types.UploadSession{}).
 		Error; err != nil {
 		return utils.DetermineSQLError(err, "delete data")
 	}
 	return nil
 }
 
-func (r *uploadSessionRepository) ListOlderThan(ctx context.Context, olderThanMinutes int) ([]types.UploadSession, error) {
+func (r *uploadSessionRepository) ListOlderThan(ctx context.Context, olderThan time.Duration) ([]types.UploadSession, error) {
+	cutoff := time.Now().Add(-olderThan)
 	var sessions []types.UploadSession
 	if err := r.db.WithContext(ctx).
-		Where("created_at < NOW() - INTERVAL '? minutes'", olderThanMinutes).
+		Where("created_at < ?", cutoff).
 		Find(&sessions).Error; err != nil {
-		return nil, utils.DetermineSQLError(err, "list data")
+		return nil, err
 	}
 	return sessions, nil
 }

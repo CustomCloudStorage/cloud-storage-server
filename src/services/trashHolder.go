@@ -30,7 +30,7 @@ func (s *trashService) PermanentDeleteFolder(ctx context.Context, userID, folder
 }
 
 func (s *trashService) purgeLoop() {
-	ticker := time.NewTicker(s.cfg.CleanupInterval)
+	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 	for range ticker.C {
 		s.purgeOnce()
@@ -38,7 +38,7 @@ func (s *trashService) purgeLoop() {
 }
 
 func (s *trashService) purgeOnce() {
-	cutoff := time.Now().Add(-s.cfg.TTL)
+	cutoff := time.Now().Add(-30 * 24 * time.Hour)
 
 	files, _ := s.trashRepository.ListFilesToPurge(context.Background(), cutoff)
 	for _, f := range files {

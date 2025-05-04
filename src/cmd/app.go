@@ -29,15 +29,18 @@ func main() {
 	folderRepo := repositories.NewFolderRepository(postgresDB)
 	uploadSessionRepo := repositories.NewUploadSessionRepository(postgresDB)
 	uploadPartRepo := repositories.NewUploadPartRepository(postgresDB)
+	trashRepo := repositories.NewTrashRepository(postgresDB)
 
 	fileService := services.NewFileService(userRepo, fileRepo, folderRepo, cfg.Service)
 	folderService := services.NewFolderService(fileRepo, folderRepo, cfg.Service)
 	uploadService := services.NewUploadService(userRepo, fileRepo, uploadSessionRepo, uploadPartRepo, cfg.Service)
+	trashService := services.NewTrashService(trashRepo, cfg.Service)
 
 	userHandler := handlers.NewUserHandler(userRepo, fileRepo, fileService)
 	fileHandler := handlers.NewFileHandler(fileRepo, fileService)
 	folderHandler := handlers.NewFolderHandler(folderRepo, folderService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
+	trashHandler := handlers.NewTrashHandler(trashRepo, trashService)
 
 	router := mux.NewRouter()
 
@@ -67,6 +70,15 @@ func main() {
 	router.HandleFunc("/users/{id}/files/{fileID}/folderID", handlers.HandleError(fileHandler.HandleUpdateFolderID)).Methods("PUT")
 	router.HandleFunc("/users/{userID}/files/{fileID}/download-url", handlers.HandleError(fileHandler.DownloadURLHandler)).Methods("GET")
 	router.HandleFunc("/files/download", handlers.HandleError(fileHandler.DownloadByTokenHandler)).Methods("GET")
+
+	router.HandleFunc("/trash/files", handlers.HandleError(trashHandler.ListFilesHandler)).Methods("GET")
+	router.HandleFunc("/trash/files/{fileID}", handlers.HandleError(trashHandler.DeleteFileHandler)).Methods("DELETE")
+	router.HandleFunc("/trash/files/{fileID}/restore", handlers.HandleError(trashHandler.RestoreFileHandler)).Methods("POST")
+	router.HandleFunc("/trash/files/{fileID}/permanent", handlers.HandleError(trashHandler.PermanentDeleteFileHandler)).Methods("DELETE")
+	router.HandleFunc("/trash/folders", handlers.HandleError(trashHandler.ListFoldersHandler)).Methods("GET")
+	router.HandleFunc("/trash/folders/{folderID}", handlers.HandleError(trashHandler.DeleteFolderHandler)).Methods("DELETE")
+	router.HandleFunc("/trash/folders/{folderID}/restore", handlers.HandleError(trashHandler.RestoreFolderHandler)).Methods("POST")
+	router.HandleFunc("/trash/files/{fileID}/permanent", handlers.HandleError(trashHandler.PermanentDeleteFileHandler)).Methods("DELETE")
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
