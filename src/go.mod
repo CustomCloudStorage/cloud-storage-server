@@ -5,6 +5,7 @@ go 1.23.4
 require github.com/spf13/viper v1.19.0
 
 require (
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -20,6 +21,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	gorm.io/gorm v1.25.10 // indirect
@@ -29,6 +31,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/golang-migrate/migrate v3.5.4+incompatible
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/joomcode/errorx v1.2.0

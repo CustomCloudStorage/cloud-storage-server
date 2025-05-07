@@ -2,48 +2,53 @@ package utils
 
 import (
 	"errors"
+	"os"
 	"strings"
+	"syscall"
 
 	"github.com/joomcode/errorx"
 	"gorm.io/gorm"
 )
 
 var (
-	ErrDatabase     = errorx.NewNamespace("database")
-	ErrConnection   = ErrDatabase.NewType("connection_error")
-	ErrMigration    = ErrDatabase.NewType("migration_error")
-	ErrPingFailed   = ErrDatabase.NewType("ping_failed")
-	ErrDriverCreate = ErrDatabase.NewType("driver_create_error")
+	Namespace = errorx.NewNamespace("app_error")
 
-	ErrConfig     = errorx.NewNamespace("config")
-	ErrRead       = ErrConfig.NewType("read_error")
-	ErrUnmarshal  = ErrConfig.NewType("unmarshal_error")
-	ErrValidation = ErrConfig.NewType("validation_error")
-
-	ErrHandler      = errorx.NewNamespace("handler")
-	ErrJsonDecode   = ErrHandler.NewType("json_decode_error")
-	ErrJsonEncode   = ErrHandler.NewType("json_encode_error")
-	ErrConversion   = ErrHandler.NewType("conversion_error")
-	ErrDataConflict = ErrHandler.NewType("data_conflict_error")
-
-	ErrRepository   = errorx.NewNamespace("repository")
-	ErrNotFound     = ErrRepository.NewType("not_found_error")
-	ErrSql          = ErrRepository.NewType("sql_error")
-	ErrAlreadyExist = ErrRepository.NewType("already_exist_error")
-	ErrHash         = ErrRepository.NewType("hash_error")
-
-	ErrDateTime = errorx.NewNamespace("date/time")
-	ErrLocation = ErrDateTime.NewType("location_error")
-	ErrFormat   = ErrDateTime.NewType("format_error")
+	ErrBadRequest = Namespace.NewType("bad_request")
+	ErrNotFound   = Namespace.NewType("not_found")
+	ErrConflict   = Namespace.NewType("conflict")
+	ErrInternal   = Namespace.NewType("internal")
 )
 
 func DetermineSQLError(err error, context string) error {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return ErrNotFound.Wrap(err, "data not found: %s", context)
 	}
-
 	if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-		return ErrAlreadyExist.Wrap(err, "data already exists: %s", context)
+		return ErrConflict.Wrap(err, "data conflict: %s", context)
 	}
-	return ErrSql.Wrap(err, context)
+	return ErrInternal.Wrap(err, "sql error: %s", context)
+}
+
+func DetermineFSError(err error, context string) error {
+	if err == nil {
+		return nil
+	}
+	if os.IsNotExist(err) {
+		return ErrNotFound.Wrap(err, "file not found: %s", context)
+	}
+	if os.IsPermission(err) {
+		return ErrInternal.Wrap(err, "permission denied: %s", context)
+	}
+	var pe *os.PathError
+	if errors.As(err, &pe) {
+		if errno, ok := pe.Err.(syscall.Errno); ok {
+			switch errno {
+			case syscall.ENOTEMPTY:
+				return ErrConflict.Wrap(err, "directory not empty: %s", context)
+			case syscall.EMFILE:
+				return ErrInternal.Wrap(err, "too many open files: %s", context)
+			}
+		}
+	}
+	return ErrInternal.Wrap(err, "I/O error: %s", context)
 }

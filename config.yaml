@@ -7,3 +7,9 @@ postgres:
   user: "postgres"
   password: "2153"
   dbname: "postgres"
+service:
+  storageDir: "../storage"
+  tmpUpload: "../tmpUploads"
+  secret: "secret_example"
+  url_ttl_seconds: 300
+  host: "localhost:8080"

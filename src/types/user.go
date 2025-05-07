@@ -20,7 +20,8 @@ type Profile struct {
 type Account struct {
 	UserID       int       `json:"user_id" gorm:"primaryKey;column:user_id"`
 	Role         string    `json:"role" gorm:"column:role"`
-	StorageLimit int       `json:"storage_limit" gorm:"column:storage_limit"`
+	StorageLimit int64     `json:"storage_limit" gorm:"column:storage_limit"`
+	UsedStorage  int64     `json:"used_storage" gorm:"not null;column:used_storage"`
 	UpdatedAt    time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
 }
 
