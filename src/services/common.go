@@ -95,7 +95,6 @@ type FileService interface {
 	ValidateDownloadToken(token string) (userID, fileID int, err error)
 	DownloadFile(ctx context.Context, userID int, fileID int) (*types.DownloadedFile, error)
 	DeleteFile(ctx context.Context, id int, userID int) error
-	StreamFile(ctx context.Context, userID, fileID int) (*types.DownloadedFile, error)
 	PreviewFile(ctx context.Context, userID, fileID int, w io.Writer) (time.Time, error)
 }
 

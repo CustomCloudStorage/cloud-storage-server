@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -13,14 +12,11 @@ import (
 
 func (h *userHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
 	params := mux.Vars(r)
-
-	log.Println("[GET] Fetching user with ID:", params["id"])
 
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID %q", params["id"])
 	}
 
 	user, err := h.userRepository.GetByID(ctx, id)
@@ -29,18 +25,13 @@ func (h *userHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	publicUser := types.NewPublicUser(user)
-
-	if err := json.NewEncoder(w).Encode(publicUser); err != nil {
-		return utils.ErrJsonEncode.Wrap(err, "failed to encode user %s to JSON", params["id"])
-	}
-
-	return nil
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"user": publicUser,
+	})
 }
 
 func (h *userHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
-	log.Println("[GET] Fetching all users")
 
 	users, err := h.userRepository.List(ctx)
 	if err != nil {
@@ -48,30 +39,23 @@ func (h *userHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) er
 	}
 
 	publicUsers := types.NewPublicUsers(users)
-
-	if err := json.NewEncoder(w).Encode(publicUsers); err != nil {
-		return utils.ErrJsonEncode.Wrap(err, "failed to encode users to JSON")
-	}
-
-	return nil
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"users": publicUsers,
+	})
 }
 
 func (h *userHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	log.Println("[POST] Creating new user")
-
 	var user types.User
-
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the user's struct")
+		return utils.ErrBadRequest.Wrap(err, "decode user JSON")
 	}
 
 	securePass, err := utils.HashPassword(user.Credentials.Password)
 	if err != nil {
-		return utils.ErrHash.Wrap(err, "Failed to hash the password")
+		return utils.ErrInternal.Wrap(err, "hash password")
 	}
-
 	user.Credentials.Password = securePass
 	user.Account.UsedStorage = 0
 
@@ -79,152 +63,126 @@ func (h *userHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusCreated, map[string]string{
-		"success": "User created successfully",
+	return writeJSONResponse(w, http.StatusCreated, map[string]interface{}{
+		"message": "user created successfully",
 	})
-
-	return nil
 }
 
 func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
 	params := mux.Vars(r)
-
-	log.Println("[PUT] Updating user`s profile with id:", params["id"])
 
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
 
 	var profile types.Profile
 	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
-		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the profile's struct")
+		return utils.ErrBadRequest.Wrap(err, "decode profile JSON")
 	}
 
 	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
-
-	if profile.UpdatedAt != user.Profile.UpdatedAt {
-		return utils.ErrDataConflict.New("The profile was changed by another user")
+	if !profile.UpdatedAt.Equal(user.Profile.UpdatedAt) {
+		return utils.ErrConflict.New("profile was changed by another user")
 	}
 
 	if err := h.userRepository.UpdateProfile(ctx, &profile, id); err != nil {
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]string{
-		"success": "Profile updated successfully",
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"message": "profile updated successfully",
 	})
-
-	return nil
 }
 
 func (h *userHandler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
 	params := mux.Vars(r)
-
-	log.Println("[PUT] Updating user's account with id:", params["id"])
 
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
 
 	var account types.Account
 	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the account's struct")
+		return utils.ErrBadRequest.Wrap(err, "decode account JSON")
 	}
 
 	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
-
-	if account.UpdatedAt != user.Account.UpdatedAt {
-		return utils.ErrDataConflict.New("The account was changed by another user")
+	if !account.UpdatedAt.Equal(user.Account.UpdatedAt) {
+		return utils.ErrConflict.New("account was changed by another user")
 	}
 
 	if err := h.userRepository.UpdateAccount(ctx, &account, id); err != nil {
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]string{
-		"success": "Account updated successfully",
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"message": "account updated successfully",
 	})
-
-	return nil
 }
 
 func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
 	params := mux.Vars(r)
-
-	log.Println("[PUT] Updating user's credentials with id:", params["id"])
 
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
 
-	var credentials types.Credentials
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
-		return utils.ErrJsonDecode.Wrap(err, "failed to decode json into the credentials struct")
+	var creds types.Credentials
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		return utils.ErrBadRequest.Wrap(err, "decode credentials JSON")
 	}
 
-	securePass, err := utils.HashPassword(credentials.Password)
+	securePass, err := utils.HashPassword(creds.Password)
 	if err != nil {
-		return utils.ErrHash.Wrap(err, "Failed to hash the password")
+		return utils.ErrInternal.Wrap(err, "hash password")
 	}
-
-	credentials.Password = securePass
+	creds.Password = securePass
 
 	user, err := h.userRepository.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
-
-	if credentials.UpdatedAt != user.Credentials.UpdatedAt {
-		return utils.ErrDataConflict.New("The credentials were changed by another user")
+	if !creds.UpdatedAt.Equal(user.Credentials.UpdatedAt) {
+		return utils.ErrConflict.New("credentials were changed by another user")
 	}
 
-	if err := h.userRepository.UpdateCredentials(ctx, &credentials, id); err != nil {
+	if err := h.userRepository.UpdateCredentials(ctx, &creds, id); err != nil {
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]string{
-		"success": "Credentials updated successfully",
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"message": "credentials updated successfully",
 	})
-
-	return nil
 }
 
 func (h *userHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
 	params := mux.Vars(r)
-
-	log.Println("[DELETE] Deleting user with id:", params["id"])
 
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		return utils.ErrConversion.Wrap(err, "failed to convert ID to int")
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
 
 	files, err := h.fileRepository.ListByUserID(ctx, id)
 	if err != nil {
 		return err
 	}
-	if len(files) != 0 {
-		for _, file := range files {
-			if err := h.fileService.DeleteFile(ctx, file.ID, id); err != nil {
-				return err
-			}
+	for _, f := range files {
+		if err := h.fileService.DeleteFile(ctx, f.ID, id); err != nil {
+			return err
 		}
 	}
 
@@ -232,9 +190,7 @@ func (h *userHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]string{
-		"success": "User successfully deleted",
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"message": "user deleted successfully",
 	})
-
-	return nil
 }

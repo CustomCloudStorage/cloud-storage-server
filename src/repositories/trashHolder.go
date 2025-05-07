@@ -47,7 +47,7 @@ func (r *trashRepository) ListFilesToPurge(ctx context.Context, before time.Time
 		Where("deleted_at IS NOT NULL AND deleted_at < ?", before).
 		Find(&out).Error
 	if err != nil {
-		return nil, utils.DetermineSQLError(err, "list trashed to purge files")
+		return nil, utils.DetermineSQLError(err, "list files to purge")
 	}
 	return out, err
 }
@@ -58,7 +58,7 @@ func (r *trashRepository) HardDeleteFileByID(ctx context.Context, fileID int) er
 		Where("id = ?", fileID).
 		Delete(&types.File{}).
 		Error; err != nil {
-		return utils.DetermineSQLError(err, "delete trashed file")
+		return utils.DetermineSQLError(err, "hard delete file")
 	}
 	return nil
 }
@@ -75,7 +75,7 @@ func (r *trashRepository) PermanentDeleteFile(ctx context.Context, userID, fileI
 		Unscoped().
 		Where("id = ?", fileID).
 		Delete(&types.File{}).Error; err != nil {
-		return "", utils.DetermineSQLError(err, "delete trashed file")
+		return "", utils.DetermineSQLError(err, "hard delete trashed file")
 	}
 	return f.PhysicalName, nil
 }
@@ -99,7 +99,7 @@ UPDATE files
 	if err := r.db.WithContext(ctx).
 		Raw(sql, map[string]interface{}{"user": userID, "root": folderID, "ts": ts}).
 		Error; err != nil {
-		return utils.DetermineSQLError(err, "soft delete folder")
+		return utils.DetermineSQLError(err, "soft delete folder cascade")
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ UPDATE files
 	if err := r.db.WithContext(ctx).
 		Raw(sql, map[string]interface{}{"user": userID, "root": folderID}).
 		Error; err != nil {
-		return utils.DetermineSQLError(err, "restore folder")
+		return utils.DetermineSQLError(err, "restore folder cascade")
 	}
 	return nil
 }
@@ -145,7 +145,7 @@ func (r *trashRepository) ListFoldersToPurge(ctx context.Context, before time.Ti
 		Where("deleted_at IS NOT NULL AND deleted_at < ?", before).
 		Find(&out).Error
 	if err != nil {
-		return nil, utils.DetermineSQLError(err, "list trashed to purge folders")
+		return nil, utils.DetermineSQLError(err, "list folders to purge")
 	}
 	return out, nil
 }
@@ -155,7 +155,7 @@ func (r *trashRepository) HardDeleteFolderByID(ctx context.Context, folderID int
 		Unscoped().
 		Where("id = ?", folderID).
 		Delete(&types.Folder{}).Error; err != nil {
-		return utils.DetermineSQLError(err, "delete trashed folder")
+		return utils.DetermineSQLError(err, "hard delete folder")
 	}
 	return nil
 }
@@ -175,7 +175,7 @@ SELECT fi.physical_name
 		Raw(sqlGetFiles, map[string]interface{}{"user": userID, "root": folderID}).
 		Rows()
 	if err != nil {
-		return nil, utils.DetermineSQLError(err, "list trashed files")
+		return nil, utils.DetermineSQLError(err, "list files for permanent delete")
 	}
 	defer rows.Close()
 
@@ -198,7 +198,7 @@ DELETE FROM folders USING cte WHERE folders.id = cte.id;
 	if err := r.db.WithContext(ctx).
 		Raw(sqlDel, map[string]interface{}{"user": userID, "root": folderID}).
 		Error; err != nil {
-		return phys, utils.DetermineSQLError(err, "delete trashed folders and files")
+		return phys, utils.DetermineSQLError(err, "hard delete folder cascade")
 	}
 
 	return phys, nil

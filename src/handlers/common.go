@@ -126,30 +126,36 @@ type HandlerWithErrorFunc func(w http.ResponseWriter, r *http.Request) error
 
 func HandleError(handler HandlerWithErrorFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := handler(w, r)
-		if err != nil {
+		if err := handler(w, r); err != nil {
+			log.Println(err.Error())
+			var (
+				status  int
+				message string
+			)
 			switch {
+			case errorx.IsOfType(err, utils.ErrBadRequest):
+				status = http.StatusBadRequest
+				message = "Bad request"
 			case errorx.IsOfType(err, utils.ErrNotFound):
-				log.Println(err.Error())
-				writeJSONResponse(w, http.StatusNotFound, map[string]string{"error": "Data not found"})
-			case errorx.IsOfType(err, utils.ErrAlreadyExist):
-				log.Println(err.Error())
-				writeJSONResponse(w, http.StatusBadRequest, map[string]string{"error": "The request body is invalid"})
-			case errorx.IsOfType(err, utils.ErrDataConflict):
-				log.Println(err.Error())
-				writeJSONResponse(w, http.StatusConflict, map[string]string{
-					"сonflict": "The data was changed",
-				})
+				status = http.StatusNotFound
+				message = "Resource not found"
+			case errorx.IsOfType(err, utils.ErrConflict):
+				status = http.StatusConflict
+				message = "Conflict occurred"
 			default:
-				log.Println("Internal server error:", err.Error())
-				writeJSONResponse(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+				status = http.StatusInternalServerError
+				message = "Internal server error"
 			}
+
+			writeJSONResponse(w, status, map[string]interface{}{
+				"error": message,
+			})
 		}
 	}
 }
 
-func writeJSONResponse(w http.ResponseWriter, httpCode int, message map[string]string) {
+func writeJSONResponse(w http.ResponseWriter, httpCode int, payload interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(httpCode)
-	json.NewEncoder(w).Encode(message)
+	return json.NewEncoder(w).Encode(payload)
 }

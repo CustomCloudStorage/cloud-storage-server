@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/CustomCloudStorage/types"
+	"github.com/CustomCloudStorage/utils"
 	"github.com/google/uuid"
 )
 
@@ -25,7 +26,7 @@ func (s *uploadService) InitSession(ctx context.Context, session *types.UploadSe
 
 	path := filepath.Join(s.temp, id.String())
 	if err := os.MkdirAll(path, 0o755); err != nil {
-		return fmt.Errorf("mkdir tmp session dir: %w", err)
+		return utils.DetermineFSError(err, fmt.Sprintf("mkdir temp dir %s", path))
 	}
 	return nil
 }
@@ -33,22 +34,22 @@ func (s *uploadService) InitSession(ctx context.Context, session *types.UploadSe
 func (s *uploadService) UploadPart(ctx context.Context, sessionID uuid.UUID, partNumber int, data io.Reader) error {
 	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
-		return fmt.Errorf("get session: %w", err)
+		return err
 	}
 	if partNumber < 1 || partNumber > session.TotalParts {
-		return fmt.Errorf("invalid part number %d", partNumber)
+		return utils.ErrBadRequest.New("invalid part number %d", partNumber)
 	}
 
 	partPath := filepath.Join(s.temp, sessionID.String(), fmt.Sprintf("%05d.part", partNumber))
 	f, err := os.Create(partPath)
 	if err != nil {
-		return fmt.Errorf("create part file: %w", err)
+		return utils.DetermineFSError(err, fmt.Sprintf("create part file %s", partPath))
 	}
 	defer f.Close()
 
 	n, err := io.Copy(f, data)
 	if err != nil {
-		return fmt.Errorf("write part data: %w", err)
+		return utils.ErrInternal.Wrap(err, "write part %d data", partNumber)
 	}
 
 	part := &types.UploadPart{
@@ -57,7 +58,7 @@ func (s *uploadService) UploadPart(ctx context.Context, sessionID uuid.UUID, par
 		Size:       n,
 	}
 	if err := s.uploadPartRepository.Create(ctx, part); err != nil {
-		return fmt.Errorf("save part metadata: %w", err)
+		return err
 	}
 	return nil
 }
@@ -65,11 +66,11 @@ func (s *uploadService) UploadPart(ctx context.Context, sessionID uuid.UUID, par
 func (s *uploadService) GetProgress(ctx context.Context, sessionID uuid.UUID) (int64, int, error) {
 	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
-		return 0, 0, fmt.Errorf("get session: %w", err)
+		return 0, 0, err
 	}
 	parts, err := s.uploadPartRepository.ListBySession(ctx, sessionID)
 	if err != nil {
-		return 0, 0, fmt.Errorf("list parts: %w", err)
+		return 0, 0, err
 	}
 	var total int64
 	for _, p := range parts {
@@ -81,14 +82,14 @@ func (s *uploadService) GetProgress(ctx context.Context, sessionID uuid.UUID) (i
 func (s *uploadService) Complete(ctx context.Context, sessionID uuid.UUID) (*types.File, error) {
 	session, err := s.uploadSessionRepository.GetByID(ctx, sessionID)
 	if err != nil {
-		return nil, fmt.Errorf("get session: %w", err)
+		return nil, err
 	}
 
 	physical := uuid.New().String()
 	finalPath := filepath.Join(s.storageDir, physical)
 	out, err := os.Create(finalPath)
 	if err != nil {
-		return nil, fmt.Errorf("create final file: %w", err)
+		return nil, utils.DetermineFSError(err, fmt.Sprintf("create final file %s", finalPath))
 	}
 	defer out.Close()
 
@@ -96,11 +97,11 @@ func (s *uploadService) Complete(ctx context.Context, sessionID uuid.UUID) (*typ
 		partPath := filepath.Join(s.temp, sessionID.String(), fmt.Sprintf("%05d.part", i))
 		in, err := os.Open(partPath)
 		if err != nil {
-			return nil, fmt.Errorf("open part %d: %w", i, err)
+			return nil, utils.DetermineFSError(err, fmt.Sprintf("open part %d", i))
 		}
 		if _, err := io.Copy(out, in); err != nil {
 			in.Close()
-			return nil, fmt.Errorf("copy part %d: %w", i, err)
+			return nil, utils.ErrInternal.Wrap(err, "copy part %d", i)
 		}
 		in.Close()
 	}
@@ -117,19 +118,20 @@ func (s *uploadService) Complete(ctx context.Context, sessionID uuid.UUID) (*typ
 		if err := s.userRepository.ReleaseStorage(ctx, session.UserID, session.TotalSize); err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf("save file metadata: %w", err)
+		return nil, err
 	}
 
 	user, err := s.userRepository.GetByID(ctx, session.UserID)
 	if err != nil {
-		return nil, fmt.Errorf("get user: %w", err)
+		return nil, err
 	}
 	if err := s.userRepository.UpdateUsedStorage(ctx, session.UserID, user.Account.UsedStorage+fileMeta.Size); err != nil {
-		return nil, fmt.Errorf("update used_storage: %w", err)
+		return nil, err
 	}
 
-	if err := os.RemoveAll(filepath.Join(s.temp, sessionID.String())); err != nil {
-		return nil, err
+	tempDir := filepath.Join(s.temp, sessionID.String())
+	if err := os.RemoveAll(tempDir); err != nil {
+		return nil, utils.DetermineFSError(err, fmt.Sprintf("remove temp dir %s", tempDir))
 	}
 	if err := s.uploadPartRepository.DeleteBySession(ctx, sessionID); err != nil {
 		return nil, err
@@ -150,12 +152,15 @@ func (s *uploadService) Abort(ctx context.Context, sessionID uuid.UUID) error {
 		return err
 	}
 
-	os.RemoveAll(filepath.Join(s.temp, sessionID.String()))
+	tempDir := filepath.Join(s.temp, sessionID.String())
+	if err := os.RemoveAll(tempDir); err != nil {
+		return utils.DetermineFSError(err, fmt.Sprintf("remove temp dir %s", tempDir))
+	}
 	if err := s.uploadPartRepository.DeleteBySession(ctx, sessionID); err != nil {
-		return fmt.Errorf("delete parts metadata: %w", err)
+		return err
 	}
 	if err := s.uploadSessionRepository.Delete(ctx, sessionID); err != nil {
-		return fmt.Errorf("delete session metadata: %w", err)
+		return err
 	}
 	return nil
 }

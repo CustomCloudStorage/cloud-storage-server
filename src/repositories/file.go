@@ -9,7 +9,7 @@ import (
 
 func (r *fileRepository) Create(ctx context.Context, file *types.File) error {
 	if err := r.db.WithContext(ctx).Create(file).Error; err != nil {
-		return utils.DetermineSQLError(err, "create data")
+		return utils.DetermineSQLError(err, "create file")
 	}
 	return nil
 }
@@ -19,14 +19,14 @@ func (r *fileRepository) GetByID(ctx context.Context, id int, userID int) (*type
 	if err := r.db.WithContext(ctx).
 		Where("id = ? AND user_id = ?", id, userID).
 		First(&file).Error; err != nil {
-		return nil, utils.DetermineSQLError(err, "get data")
+		return nil, utils.DetermineSQLError(err, "get file")
 	}
 	return &file, nil
 }
 
 func (r *fileRepository) Update(ctx context.Context, file *types.File) error {
 	if err := r.db.Save(file).Error; err != nil {
-		return utils.DetermineSQLError(err, "update data")
+		return utils.DetermineSQLError(err, "update file")
 	}
 	return nil
 }
@@ -36,7 +36,7 @@ func (r *fileRepository) ListByUserID(ctx context.Context, userID int) ([]types.
 	if err := r.db.WithContext(ctx).
 		Where("user_id = ?", userID).
 		Find(&files).Error; err != nil {
-		return nil, utils.DetermineSQLError(err, "get data")
+		return nil, utils.DetermineSQLError(err, "list files")
 	}
 	return files, nil
 }
@@ -88,7 +88,7 @@ SELECT
 			map[string]interface{}{"user": userID, "root": folderID},
 		).
 		Scan(&out).Error; err != nil {
-		return nil, err
+		return nil, utils.DetermineSQLError(err, "list files")
 	}
 	return out, nil
 }

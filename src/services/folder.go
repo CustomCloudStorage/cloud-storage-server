@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/CustomCloudStorage/utils"
 )
 
 func (s *folderService) DownloadFolder(ctx context.Context, userID, folderID int) (io.ReadCloser, string, error) {
@@ -26,6 +28,7 @@ func (s *folderService) DownloadFolder(ctx context.Context, userID, folderID int
 		zw := zip.NewWriter(pw)
 		defer zw.Close()
 		defer pw.Close()
+
 		for _, f := range files {
 			select {
 			case <-ctx.Done():
@@ -36,27 +39,32 @@ func (s *folderService) DownloadFolder(ctx context.Context, userID, folderID int
 			path := filepath.Join(s.storageDir, f.PhysicalName)
 			in, err := os.Open(path)
 			if err != nil {
-				pw.CloseWithError(fmt.Errorf("open %s: %w", path, err))
+				pw.CloseWithError(utils.DetermineFSError(err, "open "+path))
 				return
 			}
-			info, _ := in.Stat()
+			info, err := in.Stat()
+			if err != nil {
+				in.Close()
+				pw.CloseWithError(utils.DetermineFSError(err, "stat "+path))
+				return
+			}
 			header, err := zip.FileInfoHeader(info)
 			if err != nil {
 				in.Close()
-				pw.CloseWithError(err)
+				pw.CloseWithError(utils.ErrInternal.Wrap(err, "create zip header for %s", path))
 				return
 			}
 			header.Name = f.RelativePath
 			header.Method = zip.Deflate
-			w, err := zw.CreateHeader(header)
+			zwEntry, err := zw.CreateHeader(header)
 			if err != nil {
 				in.Close()
-				pw.CloseWithError(err)
+				pw.CloseWithError(utils.ErrInternal.Wrap(err, "create zip entry %s", f.RelativePath))
 				return
 			}
-			if _, err := io.Copy(w, in); err != nil {
+			if _, err := io.Copy(zwEntry, in); err != nil {
 				in.Close()
-				pw.CloseWithError(err)
+				pw.CloseWithError(utils.ErrInternal.Wrap(err, "write data for %s", path))
 				return
 			}
 			in.Close()

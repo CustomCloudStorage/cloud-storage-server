@@ -13,7 +13,7 @@ func (r *uploadSessionRepository) Create(ctx context.Context, session *types.Upl
 	if err := r.db.WithContext(ctx).
 		Create(session).
 		Error; err != nil {
-		return utils.DetermineSQLError(err, "create data")
+		return utils.DetermineSQLError(err, "create upload session")
 	}
 	return nil
 }
@@ -23,7 +23,7 @@ func (r *uploadSessionRepository) GetByID(ctx context.Context, id uuid.UUID) (*t
 	if err := r.db.WithContext(ctx).
 		First(&session, "id = ?", id).
 		Error; err != nil {
-		return nil, utils.DetermineSQLError(err, "get data")
+		return nil, utils.DetermineSQLError(err, "get upload session")
 	}
 	return &session, nil
 }
@@ -34,7 +34,7 @@ func (r *uploadSessionRepository) Delete(ctx context.Context, id uuid.UUID) erro
 		Where("id = ?", id).
 		Delete(&types.UploadSession{}).
 		Error; err != nil {
-		return utils.DetermineSQLError(err, "delete data")
+		return utils.DetermineSQLError(err, "delete upload session")
 	}
 	return nil
 }
@@ -44,8 +44,9 @@ func (r *uploadSessionRepository) ListOlderThan(ctx context.Context, olderThan t
 	var sessions []types.UploadSession
 	if err := r.db.WithContext(ctx).
 		Where("created_at < ?", cutoff).
-		Find(&sessions).Error; err != nil {
-		return nil, err
+		Find(&sessions).
+		Error; err != nil {
+		return nil, utils.DetermineSQLError(err, "list old upload sessions")
 	}
 	return sessions, nil
 }

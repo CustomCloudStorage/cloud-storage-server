@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -15,112 +15,110 @@ import (
 func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	log.Println("[POST] Creating folder")
-
 	var folder types.Folder
-
 	if err := json.NewDecoder(r.Body).Decode(&folder); err != nil {
-		return err
+		return utils.ErrBadRequest.Wrap(err, "decode folder JSON")
 	}
 
 	if err := h.folderRepository.Create(ctx, &folder); err != nil {
 		return err
 	}
 
-	return nil
+	return writeJSONResponse(w, http.StatusCreated, map[string]interface{}{
+		"folder_id": folder.ID,
+		"message":   "folder created successfully",
+	})
 }
 
 func (h *folderHandler) HandleGetFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
+	vars := mux.Vars(r)
 
-	params := mux.Vars(r)
-	userID, err := strconv.Atoi(params["id"])
+	userID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		return err
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
-	folderID, err := strconv.Atoi(params["folderID"])
+	folderID, err := strconv.Atoi(vars["folderID"])
 	if err != nil {
-		return err
+		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
-
-	log.Println("[GET] Fetching folder with id:", folderID, " by user:", userID)
 
 	folder, err := h.folderRepository.GetByID(ctx, folderID, userID)
 	if err != nil {
-		return err
+		return err // ErrNotFound or ErrInternal
 	}
 
-	if err := json.NewEncoder(w).Encode(folder); err != nil {
-		return err
-	}
-
-	return nil
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"folder": folder,
+	})
 }
 
 func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
+	vars := mux.Vars(r)
 
-	params := mux.Vars(r)
-	userID, err := strconv.Atoi(params["id"])
+	userID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		return nil
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
-	folderID, err := strconv.Atoi(params["folderID"])
+	folderID, err := strconv.Atoi(vars["folderID"])
 	if err != nil {
-		return err
+		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
-
-	log.Println("[PUT] Updating folder with id:", folderID, " by user:", userID)
 
 	var req types.Folder
-
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return err
+		return utils.ErrBadRequest.Wrap(err, "decode folder JSON")
 	}
 
-	folder, err := h.folderRepository.GetByID(ctx, folderID, userID)
+	current, err := h.folderRepository.GetByID(ctx, folderID, userID)
 	if err != nil {
 		return err
 	}
-
-	if req.UpdatedAt != folder.UpdatedAt {
-		return utils.ErrDataConflict.New("The folder was changed by another user")
+	if !req.UpdatedAt.Equal(current.UpdatedAt) {
+		return utils.ErrConflict.New("the folder was modified by another process")
 	}
 
-	if err := h.folderRepository.Update(ctx, folder); err != nil {
+	current.Name = req.Name
+	current.ParentID = req.ParentID
+
+	if err := h.folderRepository.Update(ctx, current); err != nil {
 		return err
 	}
 
-	return nil
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"message": "folder updated successfully",
+	})
 }
 
 func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
-	params := mux.Vars(r)
-	userID, err := strconv.Atoi(params["id"])
+	userID, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		return err
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
 	}
-
-	log.Println("[GET] Fetching all folders by user:", userID)
 
 	folders, err := h.folderRepository.ListByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	if err := json.NewEncoder(w).Encode(folders); err != nil {
-		return err
-	}
-
-	return nil
+	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"folders": folders,
+	})
 }
 
 func (h *folderHandler) DownloadFolderHandler(w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
-	userID, _ := strconv.Atoi(vars["userID"])
-	folderID, _ := strconv.Atoi(vars["folderID"])
+
+	userID, err := strconv.Atoi(vars["userID"])
+	if err != nil {
+		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	}
+	folderID, err := strconv.Atoi(vars["folderID"])
+	if err != nil {
+		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
+	}
 
 	reader, archiveName, err := h.folderService.DownloadFolder(r.Context(), userID, folderID)
 	if err != nil {
@@ -129,10 +127,10 @@ func (h *folderHandler) DownloadFolderHandler(w http.ResponseWriter, r *http.Req
 	defer reader.Close()
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", `attachment; filename="`+archiveName+`"`)
-	if _, err := io.Copy(w, reader); err != nil {
-		return err
-	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, archiveName))
 
+	if _, err := io.Copy(w, reader); err != nil {
+		return utils.ErrInternal.Wrap(err, "stream zip archive")
+	}
 	return nil
 }
