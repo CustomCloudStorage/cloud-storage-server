@@ -22,7 +22,7 @@ func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"files": files,
 	})
 }
@@ -43,7 +43,7 @@ func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file moved to trash",
 	})
 }
@@ -64,7 +64,7 @@ func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file restored",
 	})
 }
@@ -85,7 +85,7 @@ func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file permanently deleted",
 	})
 }
@@ -102,7 +102,7 @@ func (h *trashHandler) ListFoldersHandler(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folders": folders,
 	})
 }
@@ -123,7 +123,7 @@ func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder moved to trash",
 	})
 }
@@ -144,7 +144,7 @@ func (h *trashHandler) RestoreFolderHandler(w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder restored",
 	})
 }
@@ -165,7 +165,7 @@ func (h *trashHandler) PermanentDeleteFolderHandler(w http.ResponseWriter, r *ht
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder permanently deleted",
 	})
 }

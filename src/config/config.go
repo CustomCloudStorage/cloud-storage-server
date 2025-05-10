@@ -13,7 +13,9 @@ type Config struct {
 	Port     string `validate:"required"`
 	Cors     CORSConfig
 	Postgres databases.PostgresConfig `validate:"required"`
+	Redis    databases.Redis          `validate:"required"`
 	Service  services.ServiceConfig   `validate:"required"`
+	Auth     services.Auth            `validate:"required"`
 }
 
 type CORSConfig struct {

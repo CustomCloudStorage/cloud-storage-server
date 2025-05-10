@@ -24,7 +24,7 @@ func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusCreated, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
 		"folder_id": folder.ID,
 		"message":   "folder created successfully",
 	})
@@ -48,7 +48,7 @@ func (h *folderHandler) HandleGetFolder(w http.ResponseWriter, r *http.Request) 
 		return err // ErrNotFound or ErrInternal
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folder": folder,
 	})
 }
@@ -86,7 +86,7 @@ func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder updated successfully",
 	})
 }
@@ -103,7 +103,7 @@ func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folders": folders,
 	})
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/CustomCloudStorage/config"
 	"github.com/CustomCloudStorage/databases"
 	"github.com/CustomCloudStorage/handlers"
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
 	"github.com/gorilla/mux"
@@ -23,6 +24,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
+	redisDB, err := databases.GetRedis(cfg.Redis)
+	if err != nil {
+		log.Fatalf("Failed to connect to the redis: %v", err)
+	}
 
 	userRepo := repositories.NewUserRepository(postgresDB)
 	fileRepo := repositories.NewFileRepository(postgresDB)
@@ -30,19 +35,28 @@ func main() {
 	uploadSessionRepo := repositories.NewUploadSessionRepository(postgresDB)
 	uploadPartRepo := repositories.NewUploadPartRepository(postgresDB)
 	trashRepo := repositories.NewTrashRepository(postgresDB)
+	authRepo := repositories.NewAuthRepository(postgresDB)
+	redis := repositories.NewRedisCache(redisDB)
 
 	fileService := services.NewFileService(userRepo, fileRepo, folderRepo, cfg.Service)
 	folderService := services.NewFolderService(fileRepo, folderRepo, cfg.Service)
 	uploadService := services.NewUploadService(userRepo, fileRepo, uploadSessionRepo, uploadPartRepo, cfg.Service)
 	trashService := services.NewTrashService(trashRepo, cfg.Service)
+	authService := services.NewAuthService(authRepo, redis, cfg.Auth)
+
+	authMiddleware := middleware.NewAuthMiddleware(authService, cfg.Auth)
 
 	userHandler := handlers.NewUserHandler(userRepo, fileRepo, fileService)
 	fileHandler := handlers.NewFileHandler(fileRepo, fileService)
 	folderHandler := handlers.NewFolderHandler(folderRepo, folderService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
 	trashHandler := handlers.NewTrashHandler(trashRepo, trashService)
+	authHandler := handlers.NewAuthHandler(authRepo, authService)
 
 	router := mux.NewRouter()
+
+	router.Use(authMiddleware.AuthMiddleWare())
+	router.HandleFunc("/auth/LogIn", handlers.HandleError(authHandler.HandleLogIn)).Methods("POST")
 
 	router.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleGetUser)).Methods("GET")
 	router.HandleFunc("/users", handlers.HandleError(userHandler.HandleListUsers)).Methods("GET")

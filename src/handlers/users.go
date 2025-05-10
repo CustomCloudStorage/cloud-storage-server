@@ -25,7 +25,7 @@ func (h *userHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	publicUser := types.NewPublicUser(user)
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"user": publicUser,
 	})
 }
@@ -39,7 +39,7 @@ func (h *userHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) er
 	}
 
 	publicUsers := types.NewPublicUsers(users)
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"users": publicUsers,
 	})
 }
@@ -63,7 +63,7 @@ func (h *userHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusCreated, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
 		"message": "user created successfully",
 	})
 }
@@ -94,7 +94,7 @@ func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "profile updated successfully",
 	})
 }
@@ -125,7 +125,7 @@ func (h *userHandler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "account updated successfully",
 	})
 }
@@ -162,7 +162,7 @@ func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Req
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "credentials updated successfully",
 	})
 }
@@ -190,7 +190,7 @@ func (h *userHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "user deleted successfully",
 	})
 }

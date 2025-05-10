@@ -30,7 +30,7 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"file": file,
 	})
 }
@@ -47,7 +47,7 @@ func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"files": files,
 	})
 }
@@ -74,7 +74,7 @@ func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file name updated successfully",
 	})
 }
@@ -101,7 +101,7 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file moved successfully",
 	})
 }
@@ -124,13 +124,13 @@ func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"download_url": url,
 	})
 }
 
 func (h *fileHandler) DownloadByTokenHandler(w http.ResponseWriter, r *http.Request) error {
-	token := r.URL.Query().Get("token")
+	token := r.URL.Query().Get("download_url")
 	userID, fileID, err := h.fileService.ValidateDownloadToken(token)
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid download token")
