@@ -44,7 +44,7 @@ func main() {
 	trashService := services.NewTrashService(trashRepo, cfg.Service)
 	authService := services.NewAuthService(authRepo, redis, cfg.Auth)
 
-	authMiddleware := middleware.NewAuthMiddleware(authService, cfg.Auth)
+	authMiddleware := middleware.NewAuthMiddleware(authRepo, authService, cfg.Auth)
 
 	userHandler := handlers.NewUserHandler(userRepo, fileRepo, fileService)
 	fileHandler := handlers.NewFileHandler(fileRepo, fileService)
@@ -56,15 +56,18 @@ func main() {
 	router := mux.NewRouter()
 
 	router.Use(authMiddleware.AuthMiddleWare())
-	router.HandleFunc("/auth/LogIn", handlers.HandleError(authHandler.HandleLogIn)).Methods("POST")
+	router.HandleFunc("/auth/login", handlers.HandleError(authHandler.HandleLogIn)).Methods("POST")
 
-	router.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleGetUser)).Methods("GET")
-	router.HandleFunc("/users", handlers.HandleError(userHandler.HandleListUsers)).Methods("GET")
-	router.HandleFunc("/users", handlers.HandleError(userHandler.HandleCreateUser)).Methods("POST")
-	router.HandleFunc("/users/{id}/profile", handlers.HandleError(userHandler.HandleUpdateProfile)).Methods("PUT")
-	router.HandleFunc("/users/{id}/account", handlers.HandleError(userHandler.HandleUpdateAccount)).Methods("PUT")
-	router.HandleFunc("/users/{id}/credentials", handlers.HandleError(userHandler.HandleUpdateCredentials)).Methods("PUT")
-	router.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleDeleteUser)).Methods("DELETE")
+	adminRouter := router.PathPrefix("/admin").Subrouter()
+	adminRouter.Use(authMiddleware.RequireRole("admin", "superuser"))
+
+	adminRouter.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleGetUser)).Methods("GET")
+	adminRouter.HandleFunc("/users", handlers.HandleError(userHandler.HandleListUsers)).Methods("GET")
+	adminRouter.HandleFunc("/users", handlers.HandleError(userHandler.HandleCreateUser)).Methods("POST")
+	router.HandleFunc("/me/profile", handlers.HandleError(userHandler.HandleUpdateProfile)).Methods("PUT")
+	adminRouter.HandleFunc("/users/{id}/account", handlers.HandleError(userHandler.HandleUpdateAccount)).Methods("PUT")
+	router.HandleFunc("/me/credentials", handlers.HandleError(userHandler.HandleUpdateCredentials)).Methods("PUT")
+	adminRouter.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleDeleteUser)).Methods("DELETE")
 
 	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleCreateFolder)).Methods("POST")
 	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleGetFolder)).Methods("GET")

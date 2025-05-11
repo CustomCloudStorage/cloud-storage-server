@@ -3,7 +3,7 @@ auth:
   secret: "secret_example"
   header: "Token"
   ignore:
-    - /auth/token
+    - /auth/login
 cors:
   AllowedOrigin: "http://localhost:3000"
 postgres:
