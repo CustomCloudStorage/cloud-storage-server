@@ -6,15 +6,19 @@ import (
 	"time"
 
 	"github.com/CustomCloudStorage/utils"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
 func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	// извлекаем userID, предположим, что middleware положил его в контекст под ключ "userID"
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	files, err := h.trashRepository.ListTrashedFiles(ctx, userID)
@@ -29,9 +33,13 @@ func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) 
 
 func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -50,9 +58,13 @@ func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request)
 
 func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -71,9 +83,13 @@ func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request
 
 func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -92,9 +108,13 @@ func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http
 
 func (h *trashHandler) ListFoldersHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	folders, err := h.trashRepository.ListTrashedFolders(ctx, userID)
@@ -109,9 +129,13 @@ func (h *trashHandler) ListFoldersHandler(w http.ResponseWriter, r *http.Request
 
 func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	folderID, err := strconv.Atoi(mux.Vars(r)["folderID"])
@@ -130,9 +154,13 @@ func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Reques
 
 func (h *trashHandler) RestoreFolderHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	folderID, err := strconv.Atoi(mux.Vars(r)["folderID"])
@@ -151,9 +179,13 @@ func (h *trashHandler) RestoreFolderHandler(w http.ResponseWriter, r *http.Reque
 
 func (h *trashHandler) PermanentDeleteFolderHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	folderID, err := strconv.Atoi(mux.Vars(r)["folderID"])

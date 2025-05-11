@@ -7,6 +7,7 @@ import (
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
@@ -70,11 +71,13 @@ func (h *userHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) e
 
 func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	params := mux.Vars(r)
 
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	id, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	var profile types.Profile
@@ -132,11 +135,13 @@ func (h *userHandler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request
 
 func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	params := mux.Vars(r)
 
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	id, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	var creds types.Credentials

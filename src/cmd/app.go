@@ -71,11 +71,11 @@ func main() {
 	router.HandleFunc("/me/credentials", handlers.HandleError(userHandler.HandleUpdateCredentials)).Methods("PUT")
 	adminRouter.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleDeleteUser)).Methods("DELETE")
 
-	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleCreateFolder)).Methods("POST")
-	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleGetFolder)).Methods("GET")
-	router.HandleFunc("/users/{id}/folders/{folderID}", handlers.HandleError(folderHandler.HandleUpdateFolder)).Methods("PUT")
-	router.HandleFunc("/users/{id}/folders", handlers.HandleError(folderHandler.HandleListFolders)).Methods("GET")
-	router.HandleFunc("/users/{userID}/folders/{folderID}/download", handlers.HandleError(folderHandler.DownloadFolderHandler)).Methods("GET")
+	router.HandleFunc("/folders", handlers.HandleError(folderHandler.HandleCreateFolder)).Methods("POST")
+	router.HandleFunc("/folders/{folderID}", handlers.HandleError(folderHandler.HandleGetFolder)).Methods("GET")
+	router.HandleFunc("/folders/{folderID}", handlers.HandleError(folderHandler.HandleUpdateFolder)).Methods("PUT")
+	router.HandleFunc("/folders", handlers.HandleError(folderHandler.HandleListFolders)).Methods("GET")
+	router.HandleFunc("/folders/{folderID}/download", handlers.HandleError(folderHandler.DownloadFolderHandler)).Methods("GET")
 
 	router.HandleFunc("/uploads/init", handlers.HandleError(uploadHandler.InitSessionHandler)).Methods("POST")
 	router.HandleFunc("/uploads/{sessionID}/{partNumber}", handlers.HandleError(uploadHandler.UploadPartHandler)).Methods("PUT")
@@ -83,11 +83,11 @@ func main() {
 	router.HandleFunc("/uploads/{sessionID}/complete", handlers.HandleError(uploadHandler.CompleteHandler)).Methods("POST")
 	router.HandleFunc("/uploads/{sessionID}", handlers.HandleError(uploadHandler.AbortHandler)).Methods("DELETE")
 
-	router.HandleFunc("/users/{id}/files/{fileID}", handlers.HandleError(fileHandler.HandleGetFile)).Methods("GET")
-	router.HandleFunc("/users/{id}/files", handlers.HandleError(fileHandler.HandleListFiles)).Methods("GET")
-	router.HandleFunc("/users/{id}/files/{fileID}/name", handlers.HandleError(fileHandler.HandleUpdateName)).Methods("PUT")
-	router.HandleFunc("/users/{id}/files/{fileID}/folderID", handlers.HandleError(fileHandler.HandleUpdateFolderID)).Methods("PUT")
-	router.HandleFunc("/users/{userID}/files/{fileID}/download-url", handlers.HandleError(fileHandler.DownloadURLHandler)).Methods("GET")
+	router.HandleFunc("/files/{fileID}", handlers.HandleError(fileHandler.HandleGetFile)).Methods("GET")
+	router.HandleFunc("/files", handlers.HandleError(fileHandler.HandleListFiles)).Methods("GET")
+	router.HandleFunc("/files/{fileID}/name", handlers.HandleError(fileHandler.HandleUpdateName)).Methods("PUT")
+	router.HandleFunc("/files/{fileID}/folderID", handlers.HandleError(fileHandler.HandleUpdateFolderID)).Methods("PUT")
+	router.HandleFunc("/files/{fileID}/download-url", handlers.HandleError(fileHandler.DownloadURLHandler)).Methods("GET")
 	router.HandleFunc("/files/download", handlers.HandleError(fileHandler.DownloadByTokenHandler)).Methods("GET")
 
 	router.HandleFunc("/trash/files", handlers.HandleError(trashHandler.ListFilesHandler)).Methods("GET")
