@@ -33,6 +33,7 @@ func NewAuthService(authRepo repositories.AuthRepository, redis repositories.Red
 type AuthService interface {
 	LogInService(ctx context.Context, email, password string) error
 	ValidateToken(ctx context.Context, signedToken string) (jwt.MapClaims, error)
+	LogOut(ctx context.Context, email string) error
 }
 
 func (s *authService) LogInService(ctx context.Context, email, password string) error {
@@ -99,4 +100,21 @@ func (s *authService) ValidateToken(ctx context.Context, signedToken string) (jw
 	}
 
 	return claims, nil
+}
+
+func (s *authService) LogOut(ctx context.Context, email string) error {
+	key := fmt.Sprintf("TOKEN_%s", email)
+	ok, err := s.redis.Exists(ctx, key)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return utils.ErrUnauthorized.New("session expired")
+	}
+
+	if err := s.redis.Delete(ctx, key); err != nil {
+		return utils.ErrInternal.Wrap(err, "failed to delete JWT token")
+	}
+
+	return nil
 }

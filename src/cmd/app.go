@@ -57,6 +57,8 @@ func main() {
 
 	router.Use(authMiddleware.AuthMiddleWare())
 	router.HandleFunc("/auth/login", handlers.HandleError(authHandler.HandleLogIn)).Methods("POST")
+	router.HandleFunc("/auth/logout", handlers.HandleError(authHandler.HandleLogOut)).Methods("POST")
+	router.HandleFunc("/auth/me", handlers.HandleError(authHandler.HandleAuthMe)).Methods("GET")
 
 	adminRouter := router.PathPrefix("/admin").Subrouter()
 	adminRouter.Use(authMiddleware.RequireRole("admin", "superuser"))

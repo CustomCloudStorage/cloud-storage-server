@@ -7,6 +7,7 @@ import (
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
+	"github.com/dgrijalva/jwt-go"
 )
 
 type authHandler struct {
@@ -23,6 +24,8 @@ func NewAuthHandler(authRepo repositories.AuthRepository, authService services.A
 
 type AuthHandler interface {
 	HandleLogIn(w http.ResponseWriter, r *http.Request) error
+	HandleLogOut(w http.ResponseWriter, r *http.Request) error
+	HandleAuthMe(w http.ResponseWriter, r *http.Request) error
 }
 
 func (h *authHandler) HandleLogIn(w http.ResponseWriter, r *http.Request) error {
@@ -45,4 +48,47 @@ func (h *authHandler) HandleLogIn(w http.ResponseWriter, r *http.Request) error 
 		return nil
 	}
 	return nil
+}
+
+func (h *authHandler) HandleLogOut(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+
+	email, ok := claims["email"].(string)
+	if !ok || email == "" {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
+	}
+
+	if err := h.authservice.LogOut(ctx, email); err != nil {
+		return err
+	}
+
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"message": "successfully logged out",
+	})
+}
+
+func (h *authHandler) HandleAuthMe(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
+	claims := ctx.Value("claims").(jwt.MapClaims)
+
+	userID, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
+	}
+
+	profile, err := h.authRepository.AuthMe(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+		"profile": profile,
+	})
 }
