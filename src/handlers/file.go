@@ -9,14 +9,18 @@ import (
 	"time"
 
 	"github.com/CustomCloudStorage/utils"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
 func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	params := mux.Vars(r)
@@ -30,16 +34,19 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"file": file,
 	})
 }
 
 func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	files, err := h.fileRepository.ListByUserID(ctx, userID)
@@ -47,16 +54,19 @@ func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"files": files,
 	})
 }
 
 func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	params := mux.Vars(r)
@@ -74,16 +84,19 @@ func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file name updated successfully",
 	})
 }
 
 func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	params := mux.Vars(r)
@@ -101,16 +114,19 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file moved successfully",
 	})
 }
 
 func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	params := mux.Vars(r)
@@ -124,13 +140,13 @@ func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"download_url": url,
 	})
 }
 
 func (h *fileHandler) DownloadByTokenHandler(w http.ResponseWriter, r *http.Request) error {
-	token := r.URL.Query().Get("token")
+	token := r.URL.Query().Get("download_url")
 	userID, fileID, err := h.fileService.ValidateDownloadToken(token)
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid download token")
@@ -150,9 +166,12 @@ func (h *fileHandler) DownloadByTokenHandler(w http.ResponseWriter, r *http.Requ
 
 func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -185,9 +204,12 @@ func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) 
 
 func (h *fileHandler) PreviewFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(int)
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
 	if !ok {
-		return utils.ErrBadRequest.New("user not authenticated")
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])

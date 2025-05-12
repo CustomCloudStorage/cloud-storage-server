@@ -9,6 +9,7 @@ import (
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
 
@@ -24,7 +25,7 @@ func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusCreated, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
 		"folder_id": folder.ID,
 		"message":   "folder created successfully",
 	})
@@ -32,36 +33,42 @@ func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Reques
 
 func (h *folderHandler) HandleGetFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	vars := mux.Vars(r)
+	params := mux.Vars(r)
 
-	userID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
-	folderID, err := strconv.Atoi(vars["folderID"])
+	folderID, err := strconv.Atoi(params["folderID"])
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
 
 	folder, err := h.folderRepository.GetByID(ctx, folderID, userID)
 	if err != nil {
-		return err // ErrNotFound or ErrInternal
+		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folder": folder,
 	})
 }
 
 func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	vars := mux.Vars(r)
+	params := mux.Vars(r)
 
-	userID, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
-	folderID, err := strconv.Atoi(vars["folderID"])
+	folderID, err := strconv.Atoi(params["folderID"])
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
@@ -86,16 +93,19 @@ func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder updated successfully",
 	})
 }
 
 func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	userID, err := strconv.Atoi(mux.Vars(r)["id"])
-	if err != nil {
-		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
 
 	folders, err := h.folderRepository.ListByUserID(ctx, userID)
@@ -103,24 +113,28 @@ func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folders": folders,
 	})
 }
 
 func (h *folderHandler) DownloadFolderHandler(w http.ResponseWriter, r *http.Request) error {
-	vars := mux.Vars(r)
+	ctx := r.Context()
+	params := mux.Vars(r)
 
-	userID, err := strconv.Atoi(vars["userID"])
-	if err != nil {
-		return utils.ErrBadRequest.Wrap(err, "invalid user ID")
+	claims := ctx.Value("claims").(jwt.MapClaims)
+	userID, ok := claims["userID"].(int)
+	if !ok {
+		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+			"error": "invalid or expired token",
+		})
 	}
-	folderID, err := strconv.Atoi(vars["folderID"])
+	folderID, err := strconv.Atoi(params["folderID"])
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
 
-	reader, archiveName, err := h.folderService.DownloadFolder(r.Context(), userID, folderID)
+	reader, archiveName, err := h.folderService.DownloadFolder(ctx, userID, folderID)
 	if err != nil {
 		return err
 	}

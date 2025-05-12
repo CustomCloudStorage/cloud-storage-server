@@ -23,7 +23,7 @@ func (h *uploadHandler) InitSessionHandler(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusCreated, map[string]interface{}{
+	WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
 		"session_id": session.ID.String(),
 		"message":    "upload session initialized",
 	})
@@ -47,7 +47,7 @@ func (h *uploadHandler) UploadPartHandler(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"part_number": partNum,
 		"message":     "part uploaded successfully",
 	})
@@ -67,7 +67,7 @@ func (h *uploadHandler) ProgressHandler(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"uploaded": uploaded,
 		"total":    total,
 	})
@@ -86,7 +86,7 @@ func (h *uploadHandler) CompleteHandler(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, fileMeta)
+	return WriteJSONResponse(w, http.StatusOK, fileMeta)
 }
 
 func (h *uploadHandler) AbortHandler(w http.ResponseWriter, r *http.Request) error {
@@ -101,7 +101,7 @@ func (h *uploadHandler) AbortHandler(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	return writeJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "upload session aborted",
 	})
 }
