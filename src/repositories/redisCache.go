@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/CustomCloudStorage/utils"
@@ -24,6 +25,8 @@ type RedisCache interface {
 	Get(ctx context.Context, key string, dest interface{}) error
 	Exists(ctx context.Context, key string) (bool, error)
 	Delete(ctx context.Context, key string) error
+	Enqueue(ctx context.Context, queue string, value interface{}) error
+	Dequeue(ctx context.Context, queue string, dest interface{}) error
 }
 
 func (r *redisCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
@@ -64,6 +67,29 @@ func (r *redisCache) Exists(ctx context.Context, key string) (bool, error) {
 func (r *redisCache) Delete(ctx context.Context, key string) error {
 	if err := r.client.WithContext(ctx).Del(key).Err(); err != nil {
 		return utils.ErrInternal.Wrap(err, "redis DEL %s", key)
+	}
+	return nil
+}
+
+func (r *redisCache) Enqueue(ctx context.Context, queue string, value interface{}) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return utils.ErrInternal.Wrap(err, "marshal enqueue value")
+	}
+	if err := r.client.WithContext(ctx).LPush(queue, data).Err(); err != nil {
+		return utils.ErrInternal.Wrap(err, fmt.Sprintf("redis LPUSH %s failed", queue))
+	}
+	return nil
+}
+
+func (r *redisCache) Dequeue(ctx context.Context, queue string, dest interface{}) error {
+	res, err := r.client.WithContext(ctx).BRPop(0, queue).Result()
+	if err != nil {
+		return utils.ErrInternal.Wrap(err, fmt.Sprintf("redis BRPOP %s failed", queue))
+	}
+	var data = []byte(res[1])
+	if err := json.Unmarshal(data, dest); err != nil {
+		return utils.ErrInternal.Wrap(err, "unmarshal dequeue value")
 	}
 	return nil
 }
