@@ -4,6 +4,9 @@ auth:
   header: "Token"
   ignore:
     - /auth/login
+    - /auth/register
+    - /auth/register/confirm
+    - /auth/register/resend
 cors:
   AllowedOrigin: "http://localhost:3000"
 postgres:
@@ -13,7 +16,7 @@ postgres:
   password: "2153"
   dbname: "postgres"
 redis:
-  rport: "redis:6379"
+  rport: "localhost:6379"
   rpassword: ""
 service:
   storageDir: "../storage"
@@ -21,3 +24,9 @@ service:
   secret: "secret_example"
   url_ttl_seconds: 300
   host: "localhost:8080"
+SMTP:
+  Host:     "secret"
+  Port:     2525
+  Username: "secret"
+  Password: "secret"
+  From:     "secret"

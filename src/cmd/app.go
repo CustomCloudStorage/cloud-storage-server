@@ -3,10 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"text/template"
 
 	"github.com/CustomCloudStorage/config"
 	"github.com/CustomCloudStorage/databases"
 	"github.com/CustomCloudStorage/handlers"
+	"github.com/CustomCloudStorage/infrastructure/email"
 	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
@@ -36,13 +39,26 @@ func main() {
 	uploadPartRepo := repositories.NewUploadPartRepository(postgresDB)
 	trashRepo := repositories.NewTrashRepository(postgresDB)
 	authRepo := repositories.NewAuthRepository(postgresDB)
+	registerRepo := repositories.NewRegistrationRepository(postgresDB)
 	redis := repositories.NewRedisCache(redisDB)
+
+	email := email.NewSMTPMailer(cfg.SMTP)
+	var templates = template.New("")
+	for _, name := range []string{"registration_confirmation"} {
+		content, err := os.ReadFile("templates/" + name + ".tmpl")
+		if err != nil {
+			log.Fatal(err)
+		}
+		templates = template.Must(templates.New(name).Parse(string(content)))
+	}
 
 	fileService := services.NewFileService(userRepo, fileRepo, folderRepo, cfg.Service)
 	folderService := services.NewFolderService(fileRepo, folderRepo, cfg.Service)
 	uploadService := services.NewUploadService(userRepo, fileRepo, uploadSessionRepo, uploadPartRepo, cfg.Service)
 	trashService := services.NewTrashService(trashRepo, cfg.Service)
 	authService := services.NewAuthService(authRepo, redis, cfg.Auth)
+	emailService := services.NewEmailService(redis, email, templates)
+	registerService := services.NewRegistrationService(registerRepo, userRepo, emailService)
 
 	authMiddleware := middleware.NewAuthMiddleware(authRepo, authService, cfg.Auth)
 
@@ -52,10 +68,14 @@ func main() {
 	uploadHandler := handlers.NewUploadHandler(uploadService)
 	trashHandler := handlers.NewTrashHandler(trashRepo, trashService)
 	authHandler := handlers.NewAuthHandler(authRepo, authService)
+	registerhandler := handlers.NewRegistrationHandler(registerService)
 
 	router := mux.NewRouter()
 
 	router.Use(authMiddleware.AuthMiddleWare())
+	router.HandleFunc("/auth/register", handlers.HandleError(registerhandler.Register)).Methods("POST")
+	router.HandleFunc("/auth/register/confirm", handlers.HandleError(registerhandler.Confirm)).Methods("POST")
+	router.HandleFunc("/auth/register/resend", handlers.HandleError(registerhandler.ResendCode)).Methods("POST")
 	router.HandleFunc("/auth/login", handlers.HandleError(authHandler.HandleLogIn)).Methods("POST")
 	router.HandleFunc("/auth/logout", handlers.HandleError(authHandler.HandleLogOut)).Methods("POST")
 	router.HandleFunc("/auth/me", handlers.HandleError(authHandler.HandleAuthMe)).Methods("GET")
@@ -65,7 +85,6 @@ func main() {
 
 	adminRouter.HandleFunc("/users/{id}", handlers.HandleError(userHandler.HandleGetUser)).Methods("GET")
 	adminRouter.HandleFunc("/users", handlers.HandleError(userHandler.HandleListUsers)).Methods("GET")
-	adminRouter.HandleFunc("/users", handlers.HandleError(userHandler.HandleCreateUser)).Methods("POST")
 	router.HandleFunc("/me/profile", handlers.HandleError(userHandler.HandleUpdateProfile)).Methods("PUT")
 	adminRouter.HandleFunc("/users/{id}/account", handlers.HandleError(userHandler.HandleUpdateAccount)).Methods("PUT")
 	router.HandleFunc("/me/credentials", handlers.HandleError(userHandler.HandleUpdateCredentials)).Methods("PUT")

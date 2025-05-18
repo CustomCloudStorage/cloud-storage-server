@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/CustomCloudStorage/databases"
+	"github.com/CustomCloudStorage/infrastructure/email"
 	"github.com/CustomCloudStorage/services"
 	"github.com/go-playground/validator"
 	"github.com/spf13/viper"
@@ -16,6 +17,7 @@ type Config struct {
 	Redis    databases.Redis          `validate:"required"`
 	Service  services.ServiceConfig   `validate:"required"`
 	Auth     services.Auth            `validate:"required"`
+	SMTP     email.SMTPConfig         `validate:"required"`
 }
 
 type CORSConfig struct {

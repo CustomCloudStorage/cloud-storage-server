@@ -12,6 +12,7 @@ type Redis struct {
 }
 
 func GetRedis(cfg Redis) (*redis.Client, error) {
+	fmt.Println(cfg.RPort, cfg.RPassword)
 	client := redis.NewClient(&redis.Options{
 		Addr:     cfg.RPort,
 		Password: cfg.RPassword,

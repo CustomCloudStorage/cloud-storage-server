@@ -45,30 +45,6 @@ func (h *userHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) er
 	})
 }
 
-func (h *userHandler) HandleCreateUser(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-
-	var user types.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		return utils.ErrBadRequest.Wrap(err, "decode user JSON")
-	}
-
-	securePass, err := utils.HashPassword(user.Credentials.Password)
-	if err != nil {
-		return utils.ErrInternal.Wrap(err, "hash password")
-	}
-	user.Credentials.Password = securePass
-	user.Account.UsedStorage = 0
-
-	if err := h.userRepository.Create(ctx, &user); err != nil {
-		return err
-	}
-
-	return WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
-		"message": "user created successfully",
-	})
-}
-
 func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
