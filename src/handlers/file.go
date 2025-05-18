@@ -9,10 +9,35 @@ import (
 	"time"
 
 	"github.com/CustomCloudStorage/middleware"
+	"github.com/CustomCloudStorage/repositories"
+	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
+
+type FileHandler interface {
+	HandleGetFile(w http.ResponseWriter, r *http.Request) error
+	HandleListFiles(w http.ResponseWriter, r *http.Request) error
+	HandleUpdateName(w http.ResponseWriter, r *http.Request) error
+	HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error
+	DownloadURLHandler(w http.ResponseWriter, r *http.Request) error
+	DownloadByTokenHandler(w http.ResponseWriter, r *http.Request) error
+	StreamFileHandler(w http.ResponseWriter, r *http.Request) error
+	PreviewFileHandler(w http.ResponseWriter, r *http.Request) error
+}
+
+type fileHandler struct {
+	fileRepository repositories.FileRepository
+	fileService    services.FileService
+}
+
+func NewFileHandler(fileRepository repositories.FileRepository, fileService services.FileService) FileHandler {
+	return &fileHandler{
+		fileRepository: fileRepository,
+		fileService:    fileService,
+	}
+}
 
 func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()

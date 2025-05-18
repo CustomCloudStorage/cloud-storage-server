@@ -7,8 +7,28 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/utils"
 )
+
+type TrashService interface {
+	PermanentDeleteFile(ctx context.Context, userID, fileID int) error
+	PermanentDeleteFolder(ctx context.Context, userID, folderID int) error
+}
+
+type trashService struct {
+	trashRepository repositories.TrashRepository
+	storageDir      string
+}
+
+func NewTrashService(trashRepo repositories.TrashRepository, cfg ServiceConfig) TrashService {
+	svc := &trashService{
+		trashRepository: trashRepo,
+		storageDir:      cfg.StorageDir,
+	}
+	go svc.purgeLoop()
+	return svc
+}
 
 func (s *trashService) PermanentDeleteFile(
 	ctx context.Context, userID, fileID int) error {

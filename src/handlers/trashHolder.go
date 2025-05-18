@@ -6,10 +6,36 @@ import (
 	"time"
 
 	"github.com/CustomCloudStorage/middleware"
+	"github.com/CustomCloudStorage/repositories"
+	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
+
+type TrashHandler interface {
+	ListFilesHandler(w http.ResponseWriter, r *http.Request) error
+	DeleteFileHandler(w http.ResponseWriter, r *http.Request) error
+	RestoreFileHandler(w http.ResponseWriter, r *http.Request) error
+	PermanentDeleteFileHandler(w http.ResponseWriter, r *http.Request) error
+
+	ListFoldersHandler(w http.ResponseWriter, r *http.Request) error
+	DeleteFolderHandler(w http.ResponseWriter, r *http.Request) error
+	RestoreFolderHandler(w http.ResponseWriter, r *http.Request) error
+	PermanentDeleteFolderHandler(w http.ResponseWriter, r *http.Request) error
+}
+
+type trashHandler struct {
+	trashRepository repositories.TrashRepository
+	trashService    services.TrashService
+}
+
+func NewTrashHandler(trashRepo repositories.TrashRepository, trashService services.TrashService) TrashHandler {
+	return &trashHandler{
+		trashRepository: trashRepo,
+		trashService:    trashService,
+	}
+}
 
 func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()

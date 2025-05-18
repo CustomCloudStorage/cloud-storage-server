@@ -7,7 +7,25 @@ import (
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
+
+type UploadSessionRepository interface {
+	Create(ctx context.Context, session *types.UploadSession) error
+	GetByID(ctx context.Context, id uuid.UUID) (*types.UploadSession, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+	ListOlderThan(ctx context.Context, olderThan time.Duration) ([]types.UploadSession, error)
+}
+
+type uploadSessionRepository struct {
+	db *gorm.DB
+}
+
+func NewUploadSessionRepository(db *gorm.DB) UploadSessionRepository {
+	return &uploadSessionRepository{
+		db: db,
+	}
+}
 
 func (r *uploadSessionRepository) Create(ctx context.Context, session *types.UploadSession) error {
 	if err := r.db.WithContext(ctx).

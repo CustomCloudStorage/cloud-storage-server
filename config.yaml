@@ -22,7 +22,6 @@ service:
   storageDir: "../storage"
   tmpUpload: "../tmpUploads"
   secret: "secret_example"
-  url_ttl_seconds: 300
   host: "localhost:8080"
 SMTP:
   Host:     "secret"

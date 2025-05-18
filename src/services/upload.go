@@ -8,10 +8,41 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/google/uuid"
 )
+
+type UploadService interface {
+	InitSession(ctx context.Context, session *types.UploadSession) error
+	UploadPart(ctx context.Context, sessionID uuid.UUID, partNumber int, data io.Reader) error
+	GetProgress(ctx context.Context, sessionID uuid.UUID) (int64, int, error)
+	Complete(ctx context.Context, sessionID uuid.UUID) (*types.File, error)
+	Abort(ctx context.Context, sessionID uuid.UUID) error
+}
+
+type uploadService struct {
+	userRepository          repositories.UserRepository
+	fileRepository          repositories.FileRepository
+	uploadSessionRepository repositories.UploadSessionRepository
+	uploadPartRepository    repositories.UploadPartRepository
+	storageDir              string
+	temp                    string
+}
+
+func NewUploadService(userRepo repositories.UserRepository, fileRepo repositories.FileRepository, uploadSessionRepo repositories.UploadSessionRepository, uploadPartRepo repositories.UploadPartRepository, cfg ServiceConfig) UploadService {
+	svc := &uploadService{
+		userRepository:          userRepo,
+		fileRepository:          fileRepo,
+		uploadSessionRepository: uploadSessionRepo,
+		uploadPartRepository:    uploadPartRepo,
+		storageDir:              cfg.StorageDir,
+		temp:                    cfg.Temp,
+	}
+	go svc.purgeLoop()
+	return svc
+}
 
 func (s *uploadService) InitSession(ctx context.Context, session *types.UploadSession) error {
 	if err := s.userRepository.ReserveStorage(ctx, session.UserID, session.TotalSize); err != nil {

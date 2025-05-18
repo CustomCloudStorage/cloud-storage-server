@@ -6,7 +6,24 @@ import (
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
+
+type UploadPartRepository interface {
+	Create(ctx context.Context, part *types.UploadPart) error
+	ListBySession(ctx context.Context, sessionID uuid.UUID) ([]types.UploadPart, error)
+	DeleteBySession(ctx context.Context, sessionID uuid.UUID) error
+}
+
+type uploadPartRepository struct {
+	db *gorm.DB
+}
+
+func NewUploadPartRepository(db *gorm.DB) UploadPartRepository {
+	return &uploadPartRepository{
+		db: db,
+	}
+}
 
 func (r *uploadPartRepository) Create(ctx context.Context, part *types.UploadPart) error {
 	if err := r.db.WithContext(ctx).

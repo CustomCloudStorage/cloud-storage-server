@@ -6,11 +6,36 @@ import (
 	"strconv"
 
 	"github.com/CustomCloudStorage/middleware"
+	"github.com/CustomCloudStorage/repositories"
+	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
+
+type UserHandler interface {
+	HandleGetUser(w http.ResponseWriter, r *http.Request) error
+	HandleListUsers(w http.ResponseWriter, r *http.Request) error
+	HandleUpdateProfile(w http.ResponseWriter, r *http.Request) error
+	HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error
+	HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error
+	HandleDeleteUser(w http.ResponseWriter, r *http.Request) error
+}
+
+type userHandler struct {
+	userRepository repositories.UserRepository
+	fileRepository repositories.FileRepository
+	fileService    services.FileService
+}
+
+func NewUserHandler(userRepository repositories.UserRepository, fileRepository repositories.FileRepository, fileService services.FileService) UserHandler {
+	return &userHandler{
+		userRepository: userRepository,
+		fileRepository: fileRepository,
+		fileService:    fileService,
+	}
+}
 
 func (h *userHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()

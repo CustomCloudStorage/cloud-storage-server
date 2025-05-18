@@ -5,7 +5,27 @@ import (
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"gorm.io/gorm"
 )
+
+type FileRepository interface {
+	Create(ctx context.Context, file *types.File) error
+	GetByID(ctx context.Context, id int, userID int) (*types.File, error)
+	ListByUserID(ctx context.Context, userID int) ([]types.File, error)
+	UpdateName(ctx context.Context, id int, userID int, name string) error
+	UpdateFolder(ctx context.Context, id int, userID int, folderID int) error
+	ListFilesRecursive(ctx context.Context, userID, folderID int) ([]*types.FileWithPath, error)
+}
+
+type fileRepository struct {
+	db *gorm.DB
+}
+
+func NewFileRepository(db *gorm.DB) FileRepository {
+	return &fileRepository{
+		db: db,
+	}
+}
 
 func (r *fileRepository) Create(ctx context.Context, file *types.File) error {
 	if err := r.db.WithContext(ctx).Create(file).Error; err != nil {

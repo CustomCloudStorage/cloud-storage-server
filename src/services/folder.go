@@ -8,8 +8,27 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/utils"
 )
+
+type FolderService interface {
+	DownloadFolder(ctx context.Context, userID, folderID int) (io.ReadCloser, string, error)
+}
+
+type folderService struct {
+	folderRepository repositories.FolderRepository
+	fileRepository   repositories.FileRepository
+	storageDir       string
+}
+
+func NewFolderService(fileRepo repositories.FileRepository, folderRepo repositories.FolderRepository, cfg ServiceConfig) FolderService {
+	return &folderService{
+		fileRepository:   fileRepo,
+		folderRepository: folderRepo,
+		storageDir:       cfg.StorageDir,
+	}
+}
 
 func (s *folderService) DownloadFolder(ctx context.Context, userID, folderID int) (io.ReadCloser, string, error) {
 	folder, err := s.folderRepository.GetByID(ctx, folderID, userID)

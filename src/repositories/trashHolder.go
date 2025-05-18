@@ -6,7 +6,34 @@ import (
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"gorm.io/gorm"
 )
+
+type TrashRepository interface {
+	SoftDeleteFile(ctx context.Context, userID, fileID int, ts time.Time) error
+	RestoreFile(ctx context.Context, userID, fileID int) error
+	ListTrashedFiles(ctx context.Context, userID int) ([]*types.File, error)
+	ListFilesToPurge(ctx context.Context, before time.Time) ([]*types.File, error)
+	HardDeleteFileByID(ctx context.Context, fileID int) error
+	PermanentDeleteFile(ctx context.Context, userID, fileID int) (string, error)
+
+	SoftDeleteFolderCascade(ctx context.Context, userID, folderID int, ts time.Time) error
+	RestoreFolderCascade(ctx context.Context, userID, folderID int) error
+	ListTrashedFolders(ctx context.Context, userID int) ([]*types.Folder, error)
+	ListFoldersToPurge(ctx context.Context, before time.Time) ([]*types.Folder, error)
+	HardDeleteFolderByID(ctx context.Context, folderID int) error
+	PermanentDeleteFolder(ctx context.Context, userID, folderID int) ([]string, error)
+}
+
+type trashRepository struct {
+	db *gorm.DB
+}
+
+func NewTrashRepository(db *gorm.DB) TrashRepository {
+	return &trashRepository{
+		db: db,
+	}
+}
 
 func (r *trashRepository) SoftDeleteFile(ctx context.Context, userID, fileID int, ts time.Time) error {
 	if err := r.db.WithContext(ctx).

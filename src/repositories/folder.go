@@ -5,7 +5,25 @@ import (
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"gorm.io/gorm"
 )
+
+type FolderRepository interface {
+	Create(ctx context.Context, file *types.Folder) error
+	GetByID(ctx context.Context, id int, userID int) (*types.Folder, error)
+	Update(ctx context.Context, folder *types.Folder) error
+	ListByUserID(ctx context.Context, userID int) ([]types.Folder, error)
+}
+
+type folderRepository struct {
+	db *gorm.DB
+}
+
+func NewFolderRepository(db *gorm.DB) FolderRepository {
+	return &folderRepository{
+		db: db,
+	}
+}
 
 func (r *folderRepository) Create(ctx context.Context, folder *types.Folder) error {
 	if err := r.db.WithContext(ctx).Create(folder).Error; err != nil {

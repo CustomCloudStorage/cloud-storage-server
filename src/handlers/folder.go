@@ -8,11 +8,33 @@ import (
 	"strconv"
 
 	"github.com/CustomCloudStorage/middleware"
+	"github.com/CustomCloudStorage/repositories"
+	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 )
+
+type FolderHandler interface {
+	HandleCreateFolder(w http.ResponseWriter, r *http.Request) error
+	HandleGetFolder(w http.ResponseWriter, r *http.Request) error
+	HandleUpdateFolder(w http.ResponseWriter, r *http.Request) error
+	HandleListFolders(w http.ResponseWriter, r *http.Request) error
+	DownloadFolderHandler(w http.ResponseWriter, r *http.Request) error
+}
+
+type folderHandler struct {
+	folderRepository repositories.FolderRepository
+	folderService    services.FolderService
+}
+
+func NewFolderHandler(folderRepository repositories.FolderRepository, folderService services.FolderService) FolderHandler {
+	return &folderHandler{
+		folderRepository: folderRepository,
+		folderService:    folderService,
+	}
+}
 
 func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()

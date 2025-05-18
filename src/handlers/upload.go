@@ -6,11 +6,30 @@ import (
 	"strconv"
 
 	"github.com/CustomCloudStorage/middleware"
+	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
+
+type UploadHandler interface {
+	InitSessionHandler(w http.ResponseWriter, r *http.Request) error
+	UploadPartHandler(w http.ResponseWriter, r *http.Request) error
+	ProgressHandler(w http.ResponseWriter, r *http.Request) error
+	CompleteHandler(w http.ResponseWriter, r *http.Request) error
+	AbortHandler(w http.ResponseWriter, r *http.Request) error
+}
+
+type uploadHandler struct {
+	uploadService services.UploadService
+}
+
+func NewUploadHandler(uploadService services.UploadService) UploadHandler {
+	return &uploadHandler{
+		uploadService: uploadService,
+	}
+}
 
 func (h *uploadHandler) InitSessionHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()

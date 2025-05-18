@@ -15,10 +15,39 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/disintegration/imaging"
 )
+
+type FileService interface {
+	GenerateDownloadURL(ctx context.Context, userID, fileID int) (string, error)
+	ValidateDownloadToken(token string) (userID, fileID int, err error)
+	DownloadFile(ctx context.Context, userID int, fileID int) (*types.DownloadedFile, error)
+	DeleteFile(ctx context.Context, id int, userID int) error
+	PreviewFile(ctx context.Context, userID, fileID int, w io.Writer) (time.Time, error)
+}
+
+type fileService struct {
+	userRepository   repositories.UserRepository
+	fileRepository   repositories.FileRepository
+	folderRepository repositories.FolderRepository
+	storageDir       string
+	secret           string
+	host             string
+}
+
+func NewFileService(userRepo repositories.UserRepository, fileRepo repositories.FileRepository, folderRepo repositories.FolderRepository, cfg ServiceConfig) FileService {
+	return &fileService{
+		userRepository:   userRepo,
+		fileRepository:   fileRepo,
+		folderRepository: folderRepo,
+		storageDir:       cfg.StorageDir,
+		secret:           cfg.Secret,
+		host:             cfg.Host,
+	}
+}
 
 const tokenParts = 4
 
@@ -27,7 +56,7 @@ func (s *fileService) GenerateDownloadURL(ctx context.Context, userID, fileID in
 		return "", err
 	}
 
-	expiry := time.Now().Add(s.urlTtlSeconds).Unix()
+	expiry := time.Now().Add(300 * time.Second).Unix()
 	payload := fmt.Sprintf("%d:%d:%d", userID, fileID, expiry)
 
 	mac := hmac.New(sha256.New, []byte(s.secret))
