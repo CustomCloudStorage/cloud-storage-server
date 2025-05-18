@@ -1,6 +1,7 @@
 package email
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/smtp"
@@ -17,7 +18,6 @@ type SMTPConfig struct {
 	Username string
 	Password string
 	From     string
-	Timeout  time.Duration
 }
 
 type SMTPMailer struct {
@@ -32,6 +32,7 @@ func (m *SMTPMailer) Send(to, subject, body string) error {
 	addr := net.JoinHostPort(m.cfg.Host, strconv.Itoa(m.cfg.Port))
 	auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
 
+	// Заголовки письма
 	headers := map[string]string{
 		"From":         m.cfg.From,
 		"To":           to,
@@ -39,16 +40,14 @@ func (m *SMTPMailer) Send(to, subject, body string) error {
 		"MIME-Version": "1.0",
 		"Content-Type": `text/plain; charset="utf-8"`,
 	}
-
 	var sb strings.Builder
 	for k, v := range headers {
-		sb.WriteString(fmt.Sprintf("%s: %s", k, v))
+		sb.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
 	}
-	sb.WriteString("")
-	sb.WriteString(body)
+	sb.WriteString("\r\n" + body)
 	msg := []byte(sb.String())
 
-	dialer := &net.Dialer{Timeout: m.cfg.Timeout}
+	dialer := &net.Dialer{Timeout: 10 * time.Second}
 	conn, err := dialer.Dial("tcp", addr)
 	if err != nil {
 		return utils.ErrInternal.Wrap(err, "SMTP dial failed")
@@ -60,6 +59,15 @@ func (m *SMTPMailer) Send(to, subject, body string) error {
 		return utils.ErrInternal.Wrap(err, "create SMTP client failed")
 	}
 	defer client.Quit()
+
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		tlsConfig := &tls.Config{
+			ServerName: m.cfg.Host,
+		}
+		if err := client.StartTLS(tlsConfig); err != nil {
+			return utils.ErrInternal.Wrap(err, "STARTTLS failed")
+		}
+	}
 
 	if err := client.Auth(auth); err != nil {
 		return utils.ErrInternal.Wrap(err, "SMTP auth failed")
@@ -77,7 +85,6 @@ func (m *SMTPMailer) Send(to, subject, body string) error {
 	if err != nil {
 		return utils.ErrInternal.Wrap(err, "SMTP DATA command failed")
 	}
-
 	_, err = writer.Write(msg)
 	if err != nil {
 		return utils.ErrInternal.Wrap(err, "writing message failed")
@@ -86,8 +93,5 @@ func (m *SMTPMailer) Send(to, subject, body string) error {
 		return utils.ErrInternal.Wrap(err, "closing DATA writer failed")
 	}
 
-	if err := client.Quit(); err != nil {
-		return utils.ErrInternal.Wrap(err, "SMTP QUIT failed")
-	}
 	return nil
 }
