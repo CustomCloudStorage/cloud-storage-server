@@ -6,6 +6,7 @@ import (
 
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
+	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 )
@@ -83,12 +84,13 @@ func (h *authHandler) HandleAuthMe(w http.ResponseWriter, r *http.Request) error
 		})
 	}
 
-	profile, err := h.authRepository.AuthMe(ctx, userID)
+	user, err := h.authRepository.AuthMe(ctx, userID)
 	if err != nil {
 		return err
 	}
 
+	publicUser := types.NewPublicUser(user)
 	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
-		"profile": profile,
+		"user": publicUser,
 	})
 }

@@ -21,7 +21,7 @@ func NewAuthRepository(db *gorm.DB) *authRepository {
 type AuthRepository interface {
 	LogIn(ctx context.Context, email, password string) (*types.User, error)
 	GetRole(ctx context.Context, email string) (string, error)
-	AuthMe(ctx context.Context, id int) (*types.Profile, error)
+	AuthMe(ctx context.Context, id int) (*types.User, error)
 }
 
 func (r *authRepository) LogIn(ctx context.Context, email, password string) (*types.User, error) {
@@ -50,13 +50,15 @@ func (r *authRepository) GetRole(ctx context.Context, email string) (string, err
 	return role, nil
 }
 
-func (r *authRepository) AuthMe(ctx context.Context, id int) (*types.Profile, error) {
-	var profile types.Profile
+func (r *authRepository) AuthMe(ctx context.Context, id int) (*types.User, error) {
+	var user types.User
 	if err := r.db.WithContext(ctx).
 		Preload("Profile").
-		Where("user_id = ?", id).
-		First(&profile).Error; err != nil {
-		return nil, utils.DetermineSQLError(err, "get profile by id")
+		Preload("Account").
+		Preload("Credentials").
+		Where("id = ?", id).
+		First(&user).Error; err != nil {
+		return nil, utils.DetermineSQLError(err, "get user by id")
 	}
-	return &profile, nil
+	return &user, nil
 }
