@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
@@ -25,7 +26,7 @@ func (h *folderHandler) HandleCreateFolder(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{
 		"folder_id": folder.ID,
 		"message":   "folder created successfully",
 	})
@@ -38,7 +39,7 @@ func (h *folderHandler) HandleGetFolder(w http.ResponseWriter, r *http.Request) 
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -52,7 +53,7 @@ func (h *folderHandler) HandleGetFolder(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folder": folder,
 	})
 }
@@ -64,7 +65,7 @@ func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Reques
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -93,7 +94,7 @@ func (h *folderHandler) HandleUpdateFolder(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder updated successfully",
 	})
 }
@@ -103,7 +104,7 @@ func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -113,7 +114,7 @@ func (h *folderHandler) HandleListFolders(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folders": folders,
 	})
 }
@@ -125,7 +126,7 @@ func (h *folderHandler) DownloadFolderHandler(w http.ResponseWriter, r *http.Req
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}

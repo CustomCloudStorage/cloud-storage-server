@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -16,7 +17,7 @@ func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) 
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -26,7 +27,7 @@ func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"files": files,
 	})
 }
@@ -37,7 +38,7 @@ func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request)
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -51,7 +52,7 @@ func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file moved to trash",
 	})
 }
@@ -62,7 +63,7 @@ func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -76,7 +77,7 @@ func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file restored",
 	})
 }
@@ -87,7 +88,7 @@ func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -101,7 +102,7 @@ func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file permanently deleted",
 	})
 }
@@ -112,7 +113,7 @@ func (h *trashHandler) ListFoldersHandler(w http.ResponseWriter, r *http.Request
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -122,7 +123,7 @@ func (h *trashHandler) ListFoldersHandler(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"folders": folders,
 	})
 }
@@ -133,7 +134,7 @@ func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Reques
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -147,7 +148,7 @@ func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder moved to trash",
 	})
 }
@@ -158,7 +159,7 @@ func (h *trashHandler) RestoreFolderHandler(w http.ResponseWriter, r *http.Reque
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -172,7 +173,7 @@ func (h *trashHandler) RestoreFolderHandler(w http.ResponseWriter, r *http.Reque
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder restored",
 	})
 }
@@ -183,7 +184,7 @@ func (h *trashHandler) PermanentDeleteFolderHandler(w http.ResponseWriter, r *ht
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -197,7 +198,7 @@ func (h *trashHandler) PermanentDeleteFolderHandler(w http.ResponseWriter, r *ht
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "folder permanently deleted",
 	})
 }

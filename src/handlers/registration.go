@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
 )
@@ -39,7 +40,7 @@ func (h *registrationHandler) Register(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{"message": "user created successfully"})
+	return middleware.WriteJSONResponse(w, http.StatusCreated, map[string]interface{}{"message": "user created successfully"})
 }
 
 func (h *registrationHandler) Confirm(w http.ResponseWriter, r *http.Request) error {
@@ -59,7 +60,7 @@ func (h *registrationHandler) Confirm(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{"message": "registration confirmed"})
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{"message": "registration confirmed"})
 }
 
 func (h *registrationHandler) ResendCode(w http.ResponseWriter, r *http.Request) error {
@@ -75,5 +76,5 @@ func (h *registrationHandler) ResendCode(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{"message": "confirmation code resent"})
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{"message": "confirmation code resent"})
 }

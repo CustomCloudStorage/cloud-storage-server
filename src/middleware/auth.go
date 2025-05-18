@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/CustomCloudStorage/handlers"
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
@@ -45,7 +44,7 @@ func (m *authMiddleware) AuthMiddleWare() func(http.Handler) http.Handler {
 			}
 			token := r.Header.Get(m.cfg.Header)
 			if token == "" {
-				handlers.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+				WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 					"error": "authorization token is required",
 				})
 				return
@@ -55,15 +54,15 @@ func (m *authMiddleware) AuthMiddleWare() func(http.Handler) http.Handler {
 			if err != nil {
 				switch {
 				case errorx.IsOfType(err, utils.ErrUnauthorized):
-					handlers.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+					WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 						"error": "invalid or expired token",
 					})
 				case errorx.IsOfType(err, utils.ErrForbidden):
-					handlers.WriteJSONResponse(w, http.StatusForbidden, map[string]string{
+					WriteJSONResponse(w, http.StatusForbidden, map[string]string{
 						"error": "access denied",
 					})
 				default:
-					handlers.WriteJSONResponse(w, http.StatusInternalServerError, map[string]string{
+					WriteJSONResponse(w, http.StatusInternalServerError, map[string]string{
 						"error": "internal server error",
 					})
 				}
@@ -85,7 +84,7 @@ func (m *authMiddleware) RequireRole(allowedRoles ...string) mux.MiddlewareFunc 
 
 			email, ok := claims["email"].(string)
 			if !ok || email == "" {
-				handlers.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+				WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 					"error": "invalid or expired token",
 				})
 				return
@@ -94,7 +93,7 @@ func (m *authMiddleware) RequireRole(allowedRoles ...string) mux.MiddlewareFunc 
 			role, err := m.authRepository.GetRole(ctx, email)
 			if err != nil {
 				fmt.Printf("RequireRole: could not get role for %s: %v", email, err)
-				handlers.WriteJSONResponse(w, http.StatusInternalServerError, map[string]string{
+				WriteJSONResponse(w, http.StatusInternalServerError, map[string]string{
 					"error": "internal server error",
 				})
 				return
@@ -107,7 +106,7 @@ func (m *authMiddleware) RequireRole(allowedRoles ...string) mux.MiddlewareFunc 
 				}
 			}
 
-			handlers.WriteJSONResponse(w, http.StatusForbidden, map[string]string{
+			WriteJSONResponse(w, http.StatusForbidden, map[string]string{
 				"error": "access denied",
 			})
 		})

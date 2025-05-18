@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
@@ -18,7 +19,7 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -34,7 +35,7 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"file": file,
 	})
 }
@@ -44,7 +45,7 @@ func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) er
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -54,7 +55,7 @@ func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"files": files,
 	})
 }
@@ -64,7 +65,7 @@ func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) e
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -84,7 +85,7 @@ func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file name updated successfully",
 	})
 }
@@ -94,7 +95,7 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -114,7 +115,7 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "file moved successfully",
 	})
 }
@@ -124,7 +125,7 @@ func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request)
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -140,7 +141,7 @@ func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"download_url": url,
 	})
 }
@@ -169,7 +170,7 @@ func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) 
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -207,7 +208,7 @@ func (h *fileHandler) PreviewFileHandler(w http.ResponseWriter, r *http.Request)
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}

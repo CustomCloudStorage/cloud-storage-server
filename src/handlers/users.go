@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
 	"github.com/dgrijalva/jwt-go"
@@ -26,7 +27,7 @@ func (h *userHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	publicUser := types.NewPublicUser(user)
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"user": publicUser,
 	})
 }
@@ -40,7 +41,7 @@ func (h *userHandler) HandleListUsers(w http.ResponseWriter, r *http.Request) er
 	}
 
 	publicUsers := types.NewPublicUsers(users)
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"users": publicUsers,
 	})
 }
@@ -51,7 +52,7 @@ func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	id, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -73,7 +74,7 @@ func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "profile updated successfully",
 	})
 }
@@ -104,7 +105,7 @@ func (h *userHandler) HandleUpdateAccount(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "account updated successfully",
 	})
 }
@@ -115,7 +116,7 @@ func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Req
 	claims := ctx.Value("claims").(jwt.MapClaims)
 	id, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -143,7 +144,7 @@ func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Req
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "credentials updated successfully",
 	})
 }
@@ -171,7 +172,7 @@ func (h *userHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "user deleted successfully",
 	})
 }

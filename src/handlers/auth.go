@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/CustomCloudStorage/middleware"
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/types"
@@ -58,7 +59,7 @@ func (h *authHandler) HandleLogOut(w http.ResponseWriter, r *http.Request) error
 
 	email, ok := claims["email"].(string)
 	if !ok || email == "" {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -67,7 +68,7 @@ func (h *authHandler) HandleLogOut(w http.ResponseWriter, r *http.Request) error
 		return err
 	}
 
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "successfully logged out",
 	})
 }
@@ -79,7 +80,7 @@ func (h *authHandler) HandleAuthMe(w http.ResponseWriter, r *http.Request) error
 
 	userID, ok := claims["userID"].(int)
 	if !ok {
-		return WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
+		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
@@ -90,7 +91,7 @@ func (h *authHandler) HandleAuthMe(w http.ResponseWriter, r *http.Request) error
 	}
 
 	publicUser := types.NewPublicUser(user)
-	return WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"user": publicUser,
 	})
 }
