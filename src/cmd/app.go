@@ -55,14 +55,15 @@ func main() {
 	fileService := services.NewFileService(userRepo, fileRepo, folderRepo, cfg.Service)
 	folderService := services.NewFolderService(fileRepo, folderRepo, cfg.Service)
 	uploadService := services.NewUploadService(userRepo, fileRepo, uploadSessionRepo, uploadPartRepo, cfg.Service)
-	trashService := services.NewTrashService(trashRepo, cfg.Service)
+	trashService := services.NewTrashService(trashRepo, fileService)
 	authService := services.NewAuthService(authRepo, redis, cfg.Auth)
 	emailService := services.NewEmailService(redis, email, templates)
-	registerService := services.NewRegistrationService(registerRepo, userRepo, emailService)
+	registerService := services.NewRegistrationService(registerRepo, userRepo, emailService, cfg.Service)
+	userService := services.NewUserService(userRepo, cfg.Service)
 
 	authMiddleware := middleware.NewAuthMiddleware(authRepo, authService, cfg.Auth)
 
-	userHandler := handlers.NewUserHandler(userRepo, fileRepo, fileService)
+	userHandler := handlers.NewUserHandler(userRepo, fileRepo, fileService, userService)
 	fileHandler := handlers.NewFileHandler(fileRepo, fileService)
 	folderHandler := handlers.NewFolderHandler(folderRepo, folderService)
 	uploadHandler := handlers.NewUploadHandler(uploadService)
@@ -89,6 +90,7 @@ func main() {
 	adminRouter.HandleFunc("/users/{id}/account", middleware.HandleError(userHandler.HandleUpdateAccount)).Methods("PUT")
 	router.HandleFunc("/me/credentials", middleware.HandleError(userHandler.HandleUpdateCredentials)).Methods("PUT")
 	adminRouter.HandleFunc("/users/{id}", middleware.HandleError(userHandler.HandleDeleteUser)).Methods("DELETE")
+	adminRouter.HandleFunc("/users/storage", middleware.HandleError(userHandler.HandleStorageStats)).Methods("GET")
 
 	router.HandleFunc("/folders", middleware.HandleError(folderHandler.HandleCreateFolder)).Methods("POST")
 	router.HandleFunc("/folders/{folderID}", middleware.HandleError(folderHandler.HandleGetFolder)).Methods("GET")

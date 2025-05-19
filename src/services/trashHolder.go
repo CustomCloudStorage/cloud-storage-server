@@ -3,12 +3,9 @@ package services
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/CustomCloudStorage/repositories"
-	"github.com/CustomCloudStorage/utils"
 )
 
 type TrashService interface {
@@ -18,41 +15,37 @@ type TrashService interface {
 
 type trashService struct {
 	trashRepository repositories.TrashRepository
-	storageDir      string
+	fileService     FileService
 }
 
-func NewTrashService(trashRepo repositories.TrashRepository, cfg ServiceConfig) TrashService {
+func NewTrashService(trashRepo repositories.TrashRepository, fileService FileService) TrashService {
 	svc := &trashService{
 		trashRepository: trashRepo,
-		storageDir:      cfg.StorageDir,
+		fileService:     fileService,
 	}
 	go svc.purgeLoop()
 	return svc
 }
 
-func (s *trashService) PermanentDeleteFile(
-	ctx context.Context, userID, fileID int) error {
-	phys, err := s.trashRepository.PermanentDeleteFile(ctx, userID, fileID)
-	if err != nil {
+func (s *trashService) PermanentDeleteFile(ctx context.Context, userID, fileID int) error {
+	if err := s.trashRepository.PermanentDeleteFile(ctx, userID, fileID); err != nil {
 		return err
 	}
-	path := filepath.Join(s.storageDir, phys)
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return utils.DetermineFSError(err, fmt.Sprintf("remove file %s", phys))
+	if err := s.fileService.DeleteFile(ctx, fileID, userID); err != nil {
+		return err
 	}
 	return nil
 }
 
 func (s *trashService) PermanentDeleteFolder(ctx context.Context, userID, folderID int) error {
-	physList, err := s.trashRepository.PermanentDeleteFolder(ctx, userID, folderID)
+	filesID, err := s.trashRepository.PermanentDeleteFolder(ctx, userID, folderID)
 	if err != nil {
 		return err
 	}
 
-	for _, phys := range physList {
-		path := filepath.Join(s.storageDir, phys)
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return utils.DetermineFSError(err, fmt.Sprintf("remove file %s", phys))
+	for _, id := range filesID {
+		if err := s.fileService.DeleteFile(ctx, id, userID); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -74,9 +67,8 @@ func (s *trashService) purgeOnce() {
 		fmt.Printf("trash GC: failed to list files to purge: %v\n", err)
 	} else {
 		for _, f := range files {
-			path := filepath.Join(s.storageDir, f.PhysicalName)
-			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-				fmt.Printf("trash GC: failed to remove file %s: %v\n", path, err)
+			if err := s.fileService.DeleteFile(context.Background(), f.ID, f.UserID); err != nil {
+				fmt.Printf("trash GC: failed to remove file: %v\n", err)
 			}
 			if err := s.trashRepository.HardDeleteFileByID(context.Background(), f.ID); err != nil {
 				fmt.Printf("trash GC: failed to hard delete file record %d: %v\n", f.ID, err)

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
@@ -20,6 +21,7 @@ type UserRepository interface {
 	UpdateUsedStorage(ctx context.Context, id int, newUsedStorage int64) error
 	ReserveStorage(ctx context.Context, userID int, size int64) error
 	ReleaseStorage(ctx context.Context, userID int, size int64) error
+	SumActiveStorageLimit(ctx context.Context) (int64, error)
 }
 
 type userRepository struct {
@@ -169,4 +171,20 @@ func (r *userRepository) ReleaseStorage(ctx context.Context, userID int, size in
 		return err
 	}
 	return nil
+}
+
+func (r *userRepository) SumActiveStorageLimit(ctx context.Context) (int64, error) {
+	var total sql.NullInt64
+	err := r.db.WithContext(ctx).
+		Model(&types.Account{}).
+		Select("SUM(storage_limit)").
+		Row().
+		Scan(&total)
+	if err != nil {
+		return 0, utils.DetermineSQLError(err, "sum storage_limit")
+	}
+	if !total.Valid {
+		return 0, nil
+	}
+	return total.Int64, nil
 }

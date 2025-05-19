@@ -21,19 +21,22 @@ type UserHandler interface {
 	HandleUpdateAccount(w http.ResponseWriter, r *http.Request) error
 	HandleUpdateCredentials(w http.ResponseWriter, r *http.Request) error
 	HandleDeleteUser(w http.ResponseWriter, r *http.Request) error
+	HandleStorageStats(w http.ResponseWriter, r *http.Request) error
 }
 
 type userHandler struct {
 	userRepository repositories.UserRepository
 	fileRepository repositories.FileRepository
 	fileService    services.FileService
+	userService    services.UserService
 }
 
-func NewUserHandler(userRepository repositories.UserRepository, fileRepository repositories.FileRepository, fileService services.FileService) UserHandler {
+func NewUserHandler(userRepository repositories.UserRepository, fileRepository repositories.FileRepository, fileService services.FileService, userService services.UserService) UserHandler {
 	return &userHandler{
 		userRepository: userRepository,
 		fileRepository: fileRepository,
 		fileService:    fileService,
+		userService:    userService,
 	}
 }
 
@@ -200,4 +203,23 @@ func (h *userHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) e
 	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"message": "user deleted successfully",
 	})
+}
+
+func (h *userHandler) HandleStorageStats(w http.ResponseWriter, r *http.Request) error {
+	stats, err := h.userService.StatsStorage(r.Context())
+	if err != nil {
+		return err
+	}
+
+	const toGB = 1.0 / (1024 * 1024 * 1024)
+	out := struct {
+		Total     float64 `json:"total_gb"`
+		Allocated float64 `json:"allocated_gb"`
+		Free      float64 `json:"free_gb"`
+	}{
+		Total:     float64(stats.TotalBytes) * toGB,
+		Allocated: float64(stats.AllocatedBytes) * toGB,
+		Free:      float64(stats.FreeBytes) * toGB,
+	}
+	return middleware.WriteJSONResponse(w, http.StatusOK, out)
 }

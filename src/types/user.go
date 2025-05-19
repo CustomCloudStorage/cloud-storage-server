@@ -38,6 +38,12 @@ type PublicUser struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type StorageStats struct {
+	TotalBytes     int64 `json:"total_bytes"`
+	AllocatedBytes int64 `json:"allocated_bytes"`
+	FreeBytes      int64 `json:"free_bytes"`
+}
+
 func NewPublicUser(user *User) *PublicUser {
 	return &PublicUser{
 		Id:        user.Id,

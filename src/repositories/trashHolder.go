@@ -15,14 +15,14 @@ type TrashRepository interface {
 	ListTrashedFiles(ctx context.Context, userID int) ([]*types.File, error)
 	ListFilesToPurge(ctx context.Context, before time.Time) ([]*types.File, error)
 	HardDeleteFileByID(ctx context.Context, fileID int) error
-	PermanentDeleteFile(ctx context.Context, userID, fileID int) (string, error)
+	PermanentDeleteFile(ctx context.Context, userID, fileID int) error
 
 	SoftDeleteFolderCascade(ctx context.Context, userID, folderID int, ts time.Time) error
 	RestoreFolderCascade(ctx context.Context, userID, folderID int) error
 	ListTrashedFolders(ctx context.Context, userID int) ([]*types.Folder, error)
 	ListFoldersToPurge(ctx context.Context, before time.Time) ([]*types.Folder, error)
 	HardDeleteFolderByID(ctx context.Context, folderID int) error
-	PermanentDeleteFolder(ctx context.Context, userID, folderID int) ([]string, error)
+	PermanentDeleteFolder(ctx context.Context, userID, folderID int) ([]int, error)
 }
 
 type trashRepository struct {
@@ -90,21 +90,21 @@ func (r *trashRepository) HardDeleteFileByID(ctx context.Context, fileID int) er
 	return nil
 }
 
-func (r *trashRepository) PermanentDeleteFile(ctx context.Context, userID, fileID int) (string, error) {
-	var f types.File
+func (r *trashRepository) PermanentDeleteFile(ctx context.Context, userID, fileID int) error {
+	var file types.File
 	if err := r.db.WithContext(ctx).
 		Unscoped().
 		Where("id = ? AND user_id = ? AND deleted_at IS NOT NULL", fileID, userID).
-		First(&f).Error; err != nil {
-		return "", utils.DetermineSQLError(err, "get trashed file")
+		First(&file).Error; err != nil {
+		return utils.DetermineSQLError(err, "get trashed file")
 	}
 	if err := r.db.WithContext(ctx).
 		Unscoped().
 		Where("id = ?", fileID).
 		Delete(&types.File{}).Error; err != nil {
-		return "", utils.DetermineSQLError(err, "hard delete trashed file")
+		return utils.DetermineSQLError(err, "hard delete trashed file")
 	}
-	return f.PhysicalName, nil
+	return nil
 }
 
 func (r *trashRepository) SoftDeleteFolderCascade(ctx context.Context, userID, folderID int, ts time.Time) error {
@@ -187,14 +187,14 @@ func (r *trashRepository) HardDeleteFolderByID(ctx context.Context, folderID int
 	return nil
 }
 
-func (r *trashRepository) PermanentDeleteFolder(ctx context.Context, userID, folderID int) ([]string, error) {
+func (r *trashRepository) PermanentDeleteFolder(ctx context.Context, userID, folderID int) ([]int, error) {
 	const sqlGetFiles = `
 WITH RECURSIVE cte AS (
     SELECT id FROM folders WHERE user_id = @user AND id = @root
 	UNION ALL
     SELECT f.id FROM folders f JOIN cte ON f.parent_id = cte.id WHERE f.user_id = @user
 )
-SELECT fi.physical_name
+SELECT fi.id
 	FROM files fi
 	WHERE fi.user_id = @user AND fi.folder_id IN (SELECT id FROM cte);
 `
@@ -206,11 +206,11 @@ SELECT fi.physical_name
 	}
 	defer rows.Close()
 
-	var phys []string
+	var filesID []int
 	for rows.Next() {
-		var name string
-		rows.Scan(&name)
-		phys = append(phys, name)
+		var id int
+		rows.Scan(&id)
+		filesID = append(filesID, id)
 	}
 
 	const sqlDel = `
@@ -225,8 +225,8 @@ DELETE FROM folders USING cte WHERE folders.id = cte.id;
 	if err := r.db.WithContext(ctx).
 		Raw(sqlDel, map[string]interface{}{"user": userID, "root": folderID}).
 		Error; err != nil {
-		return phys, utils.DetermineSQLError(err, "hard delete folder cascade")
+		return filesID, utils.DetermineSQLError(err, "hard delete folder cascade")
 	}
 
-	return phys, nil
+	return filesID, nil
 }

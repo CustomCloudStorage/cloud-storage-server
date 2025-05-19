@@ -23,6 +23,8 @@ service:
   tmpUpload: "../tmpUploads"
   secret: "secret_example"
   host: "localhost:8080"
+  TotalStorageGB: 100
+  UserAllocGB: 3
 SMTP:
   Host:     "secret"
   Port:     2525

@@ -27,13 +27,15 @@ type registrationService struct {
 	registrationRepository repositories.RegistrationRepository
 	userRepository         repositories.UserRepository
 	emailService           EmailService
+	cfg                    ServiceConfig
 }
 
-func NewRegistrationService(registrationRepo repositories.RegistrationRepository, userRepo repositories.UserRepository, emailService EmailService) RegistrationService {
+func NewRegistrationService(registrationRepo repositories.RegistrationRepository, userRepo repositories.UserRepository, emailService EmailService, cfg ServiceConfig) RegistrationService {
 	svc := &registrationService{
 		registrationRepository: registrationRepo,
 		userRepository:         userRepo,
 		emailService:           emailService,
+		cfg:                    cfg,
 	}
 
 	go func() {
@@ -84,6 +86,20 @@ func (s *registrationService) Confirm(ctx context.Context, email, code string) e
 		return utils.ErrUnauthorized.Wrap(nil, "confirmation code mismatch")
 	}
 
+	allocated, err := s.userRepository.SumActiveStorageLimit(ctx)
+	if err != nil {
+		return err
+	}
+
+	totalBytes := s.cfg.TotalStorageBytes()
+
+	freeBytes := totalBytes - allocated
+
+	var allocBytes int64
+	if freeBytes >= s.cfg.UserAllocBytes() {
+		allocBytes = s.cfg.UserAllocBytes()
+	}
+
 	user := &types.User{
 		Profile: types.Profile{
 			Name:  utils.UsernameFromEmail(email),
@@ -91,7 +107,7 @@ func (s *registrationService) Confirm(ctx context.Context, email, code string) e
 		},
 		Account: types.Account{
 			Role:         "",
-			StorageLimit: 8589934592,
+			StorageLimit: allocBytes,
 			UsedStorage:  0,
 		},
 		Credentials: types.Credentials{
