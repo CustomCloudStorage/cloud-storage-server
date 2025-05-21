@@ -46,10 +46,14 @@ func (h *authHandler) HandleLogIn(w http.ResponseWriter, r *http.Request) error 
 		return utils.ErrInternal.New("failed to find account")
 	}
 
-	if err := h.authservice.LogInService(ctx, req.Email, req.Password); err != nil {
-		return nil
+	token, err := h.authservice.LogInService(ctx, req.Email, req.Password)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	return middleware.WriteJSONResponse(w, http.StatusOK, map[string]string{
+		"token": token,
+	})
 }
 
 func (h *authHandler) HandleLogOut(w http.ResponseWriter, r *http.Request) error {
@@ -75,17 +79,16 @@ func (h *authHandler) HandleLogOut(w http.ResponseWriter, r *http.Request) error
 
 func (h *authHandler) HandleAuthMe(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-
 	claims := ctx.Value("claims").(jwt.MapClaims)
 
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
 		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
 			"error": "invalid or expired token",
 		})
 	}
 
-	user, err := h.authRepository.AuthMe(ctx, userID)
+	user, err := h.authRepository.AuthMe(ctx, int(userID))
 	if err != nil {
 		return err
 	}

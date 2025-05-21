@@ -5,6 +5,7 @@ import (
 
 	"github.com/CustomCloudStorage/types"
 	"github.com/CustomCloudStorage/utils"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -26,17 +27,27 @@ type AuthRepository interface {
 
 func (r *authRepository) LogIn(ctx context.Context, email, password string) (*types.User, error) {
 	var user types.User
-	if err := r.db.WithContext(ctx).
+
+	err := r.db.WithContext(ctx).
 		Preload("Profile").
 		Preload("Account").
 		Preload("Credentials").
-		Where("email = ?, password = ?", email, password).
-		First(&user).Error; err != nil {
-		return nil, utils.DetermineSQLError(err, "get user by email")
+		Joins("JOIN profiles p ON p.user_id = users.id").
+		Where("p.email = ?", email).
+		First(&user).Error
+	if err != nil {
+		return nil, utils.ErrUnauthorized.Wrap(err, "get user by email")
 	}
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(user.Credentials.Password),
+		[]byte(password),
+	)
+	if err != nil {
+		return nil, utils.ErrUnauthorized.New("invalid email or password")
+	}
+
 	return &user, nil
 }
-
 func (r *authRepository) GetRole(ctx context.Context, email string) (string, error) {
 	var role string
 	if err := r.db.WithContext(ctx).

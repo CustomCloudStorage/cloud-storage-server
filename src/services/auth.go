@@ -10,6 +10,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type AuthService interface {
+	LogInService(ctx context.Context, email, password string) (string, error)
+	ValidateToken(ctx context.Context, signedToken string) (jwt.MapClaims, error)
+	LogOut(ctx context.Context, email string) error
+}
+
 type authService struct {
 	authRepository repositories.AuthRepository
 	redis          repositories.RedisCache
@@ -22,7 +28,7 @@ type Auth struct {
 	Ignore []string
 }
 
-func NewAuthService(authRepo repositories.AuthRepository, redis repositories.RedisCache, cfg Auth) *authService {
+func NewAuthService(authRepo repositories.AuthRepository, redis repositories.RedisCache, cfg Auth) AuthService {
 	return &authService{
 		authRepository: authRepo,
 		redis:          redis,
@@ -30,21 +36,10 @@ func NewAuthService(authRepo repositories.AuthRepository, redis repositories.Red
 	}
 }
 
-type AuthService interface {
-	LogInService(ctx context.Context, email, password string) error
-	ValidateToken(ctx context.Context, signedToken string) (jwt.MapClaims, error)
-	LogOut(ctx context.Context, email string) error
-}
-
-func (s *authService) LogInService(ctx context.Context, email, password string) error {
-	hashPass, err := utils.HashPassword(password)
+func (s *authService) LogInService(ctx context.Context, email, password string) (string, error) {
+	user, err := s.authRepository.LogIn(ctx, email, password)
 	if err != nil {
-		return err
-	}
-
-	user, err := s.authRepository.LogIn(ctx, email, hashPass)
-	if err != nil {
-		return err
+		return "", err
 	}
 
 	claims := jwt.MapClaims{
@@ -56,16 +51,15 @@ func (s *authService) LogInService(ctx context.Context, email, password string) 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(s.cfg.Secret))
 	if err != nil {
-		return utils.ErrInternal.Wrap(err, "failed to sign JWT token")
+		return "", utils.ErrInternal.Wrap(err, "failed to sign JWT token")
 	}
 
 	key := fmt.Sprintf("TOKEN_%s", email)
 
 	if err := s.redis.Set(ctx, key, signedToken, 72*time.Hour); err != nil {
-		return err
+		return "", err
 	}
-
-	return nil
+	return signedToken, nil
 }
 
 func (s *authService) ValidateToken(ctx context.Context, signedToken string) (jwt.MapClaims, error) {
