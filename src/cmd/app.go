@@ -32,6 +32,8 @@ func main() {
 		log.Fatalf("Failed to connect to the redis: %v", err)
 	}
 
+	InitSuperuser(postgresDB, cfg.Superuser)
+
 	userRepo := repositories.NewUserRepository(postgresDB)
 	fileRepo := repositories.NewFileRepository(postgresDB)
 	folderRepo := repositories.NewFolderRepository(postgresDB)

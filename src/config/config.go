@@ -11,17 +11,23 @@ import (
 )
 
 type Config struct {
-	Port     string `validate:"required"`
-	Cors     CORSConfig
-	Postgres databases.PostgresConfig `validate:"required"`
-	Redis    databases.Redis          `validate:"required"`
-	Service  services.ServiceConfig   `validate:"required"`
-	Auth     services.Auth            `validate:"required"`
-	SMTP     email.SMTPConfig         `validate:"required"`
+	Port      string `validate:"required"`
+	Cors      CORSConfig
+	Postgres  databases.PostgresConfig `validate:"required"`
+	Redis     databases.Redis          `validate:"required"`
+	Service   services.ServiceConfig   `validate:"required"`
+	Auth      services.Auth            `validate:"required"`
+	SMTP      email.SMTPConfig         `validate:"required"`
+	Superuser SuperuserConfig          `mapstructure:"superuser"`
 }
 
 type CORSConfig struct {
 	AllowedOrigin string
+}
+
+type SuperuserConfig struct {
+	Email    string `mapstructure:"email"  validate:"required,email"`
+	Password string `mapstructure:"password" validate:"required"`
 }
 
 func LoadConfig() (*Config, error) {

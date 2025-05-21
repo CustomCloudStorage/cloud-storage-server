@@ -8,7 +8,7 @@ auth:
     - /auth/register/confirm
     - /auth/register/resend
 cors:
-  AllowedOrigin: "http://localhost:3000"
+  AllowedOrigin: "http://127.0.0.1:5173"
 postgres:
   host: "127.0.0.1"
   port: "5432"
@@ -31,3 +31,6 @@ SMTP:
   Username: "secret"
   Password: "secret"
   From:     "secret"
+superuser:
+  email:    "admin@liltly.ru"
+  password: "Very$ecret123"
