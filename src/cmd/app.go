@@ -71,7 +71,7 @@ func main() {
 	uploadHandler := handlers.NewUploadHandler(uploadService)
 	trashHandler := handlers.NewTrashHandler(trashRepo, trashService)
 	authHandler := handlers.NewAuthHandler(authRepo, authService)
-	registerhandler := handlers.NewRegistrationHandler(registerService)
+	registerhandler := handlers.NewRegistrationHandler(registerRepo, registerService)
 
 	router := mux.NewRouter()
 
@@ -125,7 +125,7 @@ func main() {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{cfg.Cors.AllowedOrigin},
 		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type", "Token"},
 		Debug:            false,
 	})

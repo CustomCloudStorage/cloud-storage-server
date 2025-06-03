@@ -13,12 +13,13 @@ import (
 var (
 	Namespace = errorx.NewNamespace("app_error")
 
-	ErrBadRequest   = Namespace.NewType("bad_request")
-	ErrNotFound     = Namespace.NewType("not_found")
-	ErrConflict     = Namespace.NewType("conflict")
-	ErrInternal     = Namespace.NewType("internal")
-	ErrUnauthorized = Namespace.NewType("unauthorized")
-	ErrForbidden    = Namespace.NewType("forbidden")
+	ErrBadRequest      = Namespace.NewType("bad_request")
+	ErrNotFound        = Namespace.NewType("not_found")
+	ErrConflict        = Namespace.NewType("conflict")
+	ErrInternal        = Namespace.NewType("internal")
+	ErrUnauthorized    = Namespace.NewType("unauthorized")
+	ErrForbidden       = Namespace.NewType("forbidden")
+	ErrTooManyRequests = Namespace.NewType("too_many_requests")
 )
 
 func DetermineSQLError(err error, context string) error {

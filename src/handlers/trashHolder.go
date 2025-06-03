@@ -41,14 +41,12 @@ func (h *trashHandler) ListFilesHandler(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
-	files, err := h.trashRepository.ListTrashedFiles(ctx, userID)
+	files, err := h.trashRepository.ListTrashedFiles(ctx, int(userID))
 	if err != nil {
 		return err
 	}
@@ -62,11 +60,9 @@ func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -74,7 +70,7 @@ func (h *trashHandler) DeleteFileHandler(w http.ResponseWriter, r *http.Request)
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	if err := h.trashRepository.SoftDeleteFile(ctx, userID, fileID, time.Now()); err != nil {
+	if err := h.trashRepository.SoftDeleteFile(ctx, int(userID), fileID, time.Now()); err != nil {
 		return err
 	}
 
@@ -87,11 +83,9 @@ func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -99,7 +93,7 @@ func (h *trashHandler) RestoreFileHandler(w http.ResponseWriter, r *http.Request
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	if err := h.trashRepository.RestoreFile(ctx, userID, fileID); err != nil {
+	if err := h.trashRepository.RestoreFile(ctx, int(userID), fileID); err != nil {
 		return err
 	}
 
@@ -112,11 +106,9 @@ func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -124,7 +116,7 @@ func (h *trashHandler) PermanentDeleteFileHandler(w http.ResponseWriter, r *http
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	if err := h.trashService.PermanentDeleteFile(ctx, userID, fileID); err != nil {
+	if err := h.trashService.PermanentDeleteFile(ctx, int(userID), fileID); err != nil {
 		return err
 	}
 
@@ -137,14 +129,12 @@ func (h *trashHandler) ListFoldersHandler(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
-	folders, err := h.trashRepository.ListTrashedFolders(ctx, userID)
+	folders, err := h.trashRepository.ListTrashedFolders(ctx, int(userID))
 	if err != nil {
 		return err
 	}
@@ -158,11 +148,9 @@ func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	folderID, err := strconv.Atoi(mux.Vars(r)["folderID"])
@@ -170,7 +158,7 @@ func (h *trashHandler) DeleteFolderHandler(w http.ResponseWriter, r *http.Reques
 		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
 
-	if err := h.trashRepository.SoftDeleteFolderCascade(ctx, userID, folderID, time.Now()); err != nil {
+	if err := h.trashRepository.SoftDeleteFolderCascade(ctx, int(userID), folderID, time.Now()); err != nil {
 		return err
 	}
 
@@ -183,19 +171,16 @@ func (h *trashHandler) RestoreFolderHandler(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
-
 	folderID, err := strconv.Atoi(mux.Vars(r)["folderID"])
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
 
-	if err := h.trashRepository.RestoreFolderCascade(ctx, userID, folderID); err != nil {
+	if err := h.trashRepository.RestoreFolderCascade(ctx, int(userID), folderID); err != nil {
 		return err
 	}
 
@@ -208,11 +193,9 @@ func (h *trashHandler) PermanentDeleteFolderHandler(w http.ResponseWriter, r *ht
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	folderID, err := strconv.Atoi(mux.Vars(r)["folderID"])
@@ -220,7 +203,7 @@ func (h *trashHandler) PermanentDeleteFolderHandler(w http.ResponseWriter, r *ht
 		return utils.ErrBadRequest.Wrap(err, "invalid folder ID")
 	}
 
-	if err := h.trashService.PermanentDeleteFolder(ctx, userID, folderID); err != nil {
+	if err := h.trashService.PermanentDeleteFolder(ctx, int(userID), folderID); err != nil {
 		return err
 	}
 

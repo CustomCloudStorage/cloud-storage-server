@@ -78,11 +78,9 @@ func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	id, ok := claims["userID"].(int)
+	id, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	var profile types.Profile
@@ -90,7 +88,7 @@ func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request
 		return utils.ErrBadRequest.Wrap(err, "decode profile JSON")
 	}
 
-	user, err := h.userRepository.GetByID(ctx, id)
+	user, err := h.userRepository.GetByID(ctx, int(id))
 	if err != nil {
 		return err
 	}
@@ -98,7 +96,7 @@ func (h *userHandler) HandleUpdateProfile(w http.ResponseWriter, r *http.Request
 		return utils.ErrConflict.New("profile was changed by another user")
 	}
 
-	if err := h.userRepository.UpdateProfile(ctx, &profile, id); err != nil {
+	if err := h.userRepository.UpdateProfile(ctx, &profile, int(id)); err != nil {
 		return err
 	}
 
@@ -142,11 +140,9 @@ func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	id, ok := claims["userID"].(int)
+	id, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	var creds types.Credentials
@@ -160,7 +156,7 @@ func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Req
 	}
 	creds.Password = securePass
 
-	user, err := h.userRepository.GetByID(ctx, id)
+	user, err := h.userRepository.GetByID(ctx, int(id))
 	if err != nil {
 		return err
 	}
@@ -168,7 +164,7 @@ func (h *userHandler) HandleUpdateCredentials(w http.ResponseWriter, r *http.Req
 		return utils.ErrConflict.New("credentials were changed by another user")
 	}
 
-	if err := h.userRepository.UpdateCredentials(ctx, &creds, id); err != nil {
+	if err := h.userRepository.UpdateCredentials(ctx, &creds, int(id)); err != nil {
 		return err
 	}
 

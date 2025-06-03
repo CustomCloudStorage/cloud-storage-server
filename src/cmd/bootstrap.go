@@ -34,7 +34,7 @@ func InitSuperuser(db *gorm.DB, suCfg config.SuperuserConfig) {
 			},
 			Account: types.Account{
 				Role:         "superuser",
-				StorageLimit: 0,
+				StorageLimit: 3 * 1024 * 1024 * 1024,
 				UsedStorage:  0,
 			},
 		}

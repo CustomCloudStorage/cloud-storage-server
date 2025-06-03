@@ -42,11 +42,9 @@ func NewFileHandler(fileRepository repositories.FileRepository, fileService serv
 func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	params := mux.Vars(r)
@@ -55,7 +53,7 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	file, err := h.fileRepository.GetByID(ctx, fileID, userID)
+	file, err := h.fileRepository.GetByID(ctx, fileID, int(userID))
 	if err != nil {
 		return err
 	}
@@ -68,14 +66,12 @@ func (h *fileHandler) HandleGetFile(w http.ResponseWriter, r *http.Request) erro
 func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
-	files, err := h.fileRepository.ListByUserID(ctx, userID)
+	files, err := h.fileRepository.ListByUserID(ctx, int(userID))
 	if err != nil {
 		return err
 	}
@@ -88,13 +84,10 @@ func (h *fileHandler) HandleListFiles(w http.ResponseWriter, r *http.Request) er
 func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
-
 	params := mux.Vars(r)
 	fileID, err := strconv.Atoi(params["fileID"])
 	if err != nil {
@@ -106,7 +99,7 @@ func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) e
 		return utils.ErrBadRequest.Wrap(err, "invalid JSON payload")
 	}
 
-	if err := h.fileRepository.UpdateName(ctx, fileID, userID, payload.Name); err != nil {
+	if err := h.fileRepository.UpdateName(ctx, fileID, int(userID), payload.Name); err != nil {
 		return err
 	}
 
@@ -118,11 +111,9 @@ func (h *fileHandler) HandleUpdateName(w http.ResponseWriter, r *http.Request) e
 func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	params := mux.Vars(r)
@@ -136,7 +127,7 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 		return utils.ErrBadRequest.Wrap(err, "invalid JSON payload")
 	}
 
-	if err := h.fileRepository.UpdateFolder(ctx, fileID, userID, payload.FolderID); err != nil {
+	if err := h.fileRepository.UpdateFolder(ctx, fileID, int(userID), payload.FolderID); err != nil {
 		return err
 	}
 
@@ -148,20 +139,17 @@ func (h *fileHandler) HandleUpdateFolderID(w http.ResponseWriter, r *http.Reques
 func (h *fileHandler) DownloadURLHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
-
 	params := mux.Vars(r)
 	fileID, err := strconv.Atoi(params["fileID"])
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	url, err := h.fileService.GenerateDownloadURL(ctx, userID, fileID)
+	url, err := h.fileService.GenerateDownloadURL(ctx, int(userID), fileID)
 	if err != nil {
 		return err
 	}
@@ -193,11 +181,9 @@ func (h *fileHandler) DownloadByTokenHandler(w http.ResponseWriter, r *http.Requ
 func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
 
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
@@ -205,7 +191,7 @@ func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) 
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	dfile, err := h.fileService.DownloadFile(ctx, userID, fileID)
+	dfile, err := h.fileService.DownloadFile(ctx, int(userID), fileID)
 	if err != nil {
 		return err
 	}
@@ -231,19 +217,16 @@ func (h *fileHandler) StreamFileHandler(w http.ResponseWriter, r *http.Request) 
 func (h *fileHandler) PreviewFileHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	claims := ctx.Value("claims").(jwt.MapClaims)
-	userID, ok := claims["userID"].(int)
+	userID, ok := claims["userID"].(float64)
 	if !ok {
-		return middleware.WriteJSONResponse(w, http.StatusUnauthorized, map[string]string{
-			"error": "invalid or expired token",
-		})
+		return utils.ErrUnauthorized.New("invalid userID")
 	}
-
 	fileID, err := strconv.Atoi(mux.Vars(r)["fileID"])
 	if err != nil {
 		return utils.ErrBadRequest.Wrap(err, "invalid file ID")
 	}
 
-	modTime, err := h.fileService.PreviewFile(ctx, userID, fileID, io.Discard)
+	modTime, err := h.fileService.PreviewFile(ctx, int(userID), fileID, io.Discard)
 	if err != nil {
 		return err
 	}
@@ -260,7 +243,7 @@ func (h *fileHandler) PreviewFileHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.Header().Set("Last-Modified", modTime.UTC().Format(http.TimeFormat))
 
-	_, err = h.fileService.PreviewFile(ctx, userID, fileID, w)
+	_, err = h.fileService.PreviewFile(ctx, int(userID), fileID, w)
 	if err != nil {
 		return utils.ErrInternal.Wrap(err, "generate preview")
 	}

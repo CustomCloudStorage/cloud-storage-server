@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/CustomCloudStorage/middleware"
+	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
 	"github.com/CustomCloudStorage/utils"
 )
@@ -16,11 +19,15 @@ type RegistrationHandler interface {
 }
 
 type registrationHandler struct {
-	registrationService services.RegistrationService
+	registrationRepository repositories.RegistrationRepository
+	registrationService    services.RegistrationService
 }
 
-func NewRegistrationHandler(registrationService services.RegistrationService) RegistrationHandler {
-	return &registrationHandler{registrationService: registrationService}
+func NewRegistrationHandler(registrationRepo repositories.RegistrationRepository, registrationService services.RegistrationService) RegistrationHandler {
+	return &registrationHandler{
+		registrationRepository: registrationRepo,
+		registrationService:    registrationService,
+	}
 }
 
 func (h *registrationHandler) Register(w http.ResponseWriter, r *http.Request) error {
@@ -66,13 +73,32 @@ func (h *registrationHandler) Confirm(w http.ResponseWriter, r *http.Request) er
 func (h *registrationHandler) ResendCode(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
-	var email string
-	if err := json.NewDecoder(r.Body).Decode(&email); err != nil {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return utils.ErrBadRequest.Wrap(err, "decode email")
 	}
 
-	err := h.registrationService.ResendCode(ctx, email)
+	reg, err := h.registrationRepository.GetByEmail(ctx, req.Email)
 	if err != nil {
+		return err
+	}
+	if time.Since(reg.LastSentAt) < (1 * time.Minute) {
+		nextAllowed := reg.LastSentAt.Add(1 * time.Minute)
+		wait := time.Until(nextAllowed)
+		fmt.Printf("Подождите %d секунд", wait)
+		return middleware.WriteJSONResponse(
+			w,
+			http.StatusTooManyRequests,
+			map[string]interface{}{
+				"error":      fmt.Sprintf("Подождите %d секунд", wait),
+				"retryAfter": wait,
+			},
+		)
+	}
+
+	if err = h.registrationService.ResendCode(ctx, reg.Email); err != nil {
 		return err
 	}
 

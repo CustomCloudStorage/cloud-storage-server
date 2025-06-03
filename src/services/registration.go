@@ -11,10 +11,9 @@ import (
 )
 
 const (
-	codeTTL        = 3 * time.Hour
-	resendInterval = 1 * time.Minute
-	codeLength     = 6
-	purgeInterval  = 1 * time.Hour
+	codeTTL       = 3 * time.Hour
+	codeLength    = 6
+	purgeInterval = 1 * time.Hour
 )
 
 type RegistrationService interface {
@@ -124,13 +123,6 @@ func (s *registrationService) Confirm(ctx context.Context, email, code string) e
 }
 
 func (s *registrationService) ResendCode(ctx context.Context, email string) error {
-	reg, err := s.registrationRepository.GetByEmail(ctx, email)
-	if err != nil {
-		return err
-	}
-	if time.Since(reg.LastSentAt) < resendInterval {
-		return utils.ErrBadRequest.Wrap(nil, fmt.Sprintf("wait %s before resend", resendInterval))
-	}
 	code, err := utils.GenerateCode(codeLength)
 	if err != nil {
 		return utils.ErrInternal.Wrap(err, "generate confirmation code failed")

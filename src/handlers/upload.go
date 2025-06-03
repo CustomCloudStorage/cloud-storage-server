@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -34,6 +35,7 @@ func NewUploadHandler(uploadService services.UploadService) UploadHandler {
 func (h *uploadHandler) InitSessionHandler(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
+	fmt.Println("InitSessionHandler")
 	var session types.UploadSession
 	if err := json.NewDecoder(r.Body).Decode(&session); err != nil {
 		return utils.ErrBadRequest.Wrap(err, "decode upload session payload")
@@ -86,6 +88,8 @@ func (h *uploadHandler) ProgressHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("total: ", uploaded, ", total: ", total)
 
 	middleware.WriteJSONResponse(w, http.StatusOK, map[string]interface{}{
 		"uploaded": uploaded,

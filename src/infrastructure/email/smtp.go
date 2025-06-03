@@ -32,7 +32,6 @@ func (m *SMTPMailer) Send(to, subject, body string) error {
 	addr := net.JoinHostPort(m.cfg.Host, strconv.Itoa(m.cfg.Port))
 	auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
 
-	// Заголовки письма
 	headers := map[string]string{
 		"From":         m.cfg.From,
 		"To":           to,
