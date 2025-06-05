@@ -15,6 +15,8 @@ import (
 	"github.com/CustomCloudStorage/services"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	_ "github.com/swaggo/files"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -74,6 +76,14 @@ func main() {
 	registerhandler := handlers.NewRegistrationHandler(registerRepo, registerService)
 
 	router := mux.NewRouter()
+
+	router.PathPrefix("/swagger.yaml").Handler(
+		http.StripPrefix("/", http.FileServer(http.Dir("./docs"))),
+	)
+
+	router.PathPrefix("/swagger/").Handler(httpSwagger.Handler(
+		httpSwagger.URL("/swagger.yaml"),
+	))
 
 	router.Use(authMiddleware.AuthMiddleWare())
 	router.HandleFunc("/auth/register", middleware.HandleError(registerhandler.Register)).Methods("POST")

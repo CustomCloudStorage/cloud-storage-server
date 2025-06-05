@@ -1,0 +1,1901 @@
+openapi: 3.0.0
+info:
+  title: CustomCloudStorage API
+  version: '1.0'
+  description: 'API для облачного хранилища. Включает эндпоинты для регистрации,
+
+    аутентификации, работы с файлами, папками, мультизагрузками и корзиной.
+
+    '
+servers:
+- url: http://localhost:8080
+  description: Локальный сервер (для разработки)
+tags:
+- name: Auth
+  description: Регистрация и аутентификация пользователей
+- name: Admin-Users
+  description: Админские операции с пользователями
+- name: User
+  description: Операции текущего пользователя
+- name: Folders
+  description: Управление папками (создание, обновление, удаление, скачивание)
+- name: Files
+  description: Управление файлами (просмотр, обновление, скачивание)
+- name: Uploads
+  description: Управление мультизагрузками (инициация, загрузка частей, прогресс,
+    завершение, отмена)
+- name: Trash
+  description: 'Корзина: soft-удаление и восстановление файлов/папок'
+components:
+  securitySchemes:
+    TokenAuth:
+      type: apiKey
+      in: header
+      name: Token
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: описание ошибки
+        details:
+          type: object
+          additionalProperties: true
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Иван Иванов
+        email:
+          type: string
+          example: ivan@example.com
+        password_hash:
+          type: string
+          example: $2a$10$...
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-01-15T14:35:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-01-20T09:12:00Z'
+      required:
+      - id
+      - name
+      - email
+      - password_hash
+      - created_at
+      - updated_at
+    PublicUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Иван Иванов
+        email:
+          type: string
+          example: ivan@example.com
+      required:
+      - id
+      - name
+      - email
+    StorageStats:
+      type: object
+      properties:
+        total_bytes:
+          type: integer
+          example: 1073741824
+        allocated_bytes:
+          type: integer
+          example: 524288000
+        free_bytes:
+          type: integer
+          example: 549453824
+      required:
+      - total_bytes
+      - allocated_bytes
+      - free_bytes
+    Folder:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        user_id:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Документы
+        parent_id:
+          type: integer
+          nullable: true
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-02-01T12:00:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-02-01T12:05:00Z'
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+      required:
+      - id
+      - user_id
+      - name
+      - created_at
+      - updated_at
+    File:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 77
+        user_id:
+          type: integer
+          example: 42
+        folder_id:
+          type: integer
+          nullable: true
+          example: 10
+        name:
+          type: string
+          example: отчёт.pdf
+        extension:
+          type: string
+          example: pdf
+        size:
+          type: integer
+          example: 1048576
+        physical_name:
+          type: string
+          example: 77a3f2e1-отчёт.pdf
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-02-10T15:30:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-02-10T15:45:00Z'
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+      required:
+      - id
+      - user_id
+      - name
+      - extension
+      - size
+      - physical_name
+      - created_at
+      - updated_at
+    UploadSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        user_id:
+          type: integer
+          example: 42
+        folder_id:
+          type: integer
+          nullable: true
+          example: 10
+        name:
+          type: string
+          example: отчёт
+        extension:
+          type: string
+          example: pdf
+        total_parts:
+          type: integer
+          example: 5
+        total_size:
+          type: integer
+          example: 5242880
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-02-15T11:00:00Z'
+      required:
+      - id
+      - user_id
+      - name
+      - extension
+      - total_parts
+      - total_size
+      - created_at
+    Registration:
+      type: object
+      properties:
+        email:
+          type: string
+          example: ivan@example.com
+        password:
+          type: string
+          example: secret123
+        code:
+          type: string
+          example: '123456'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-01-10T17:45:00Z'
+        last_sent_at:
+          type: string
+          format: date-time
+          example: '2025-01-11T10:00:00Z'
+      required:
+      - email
+      - password
+      - code
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: ivan@example.com
+        password:
+          type: string
+          example: secret123
+      required:
+      - email
+      - password
+    ConfirmRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: ivan@example.com
+        code:
+          type: string
+          example: '123456'
+      required:
+      - email
+      - code
+    ResendCodeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: ivan@example.com
+      required:
+      - email
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: ivan@example.com
+        password:
+          type: string
+          example: secret123
+      required:
+      - email
+      - password
+    UpdateFileNameRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: новое_имя.txt
+      required:
+      - name
+    MoveFileRequest:
+      type: object
+      properties:
+        folder_id:
+          type: integer
+          example: 5
+      required:
+      - folder_id
+    CreateFolderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Новая папка
+        parent_id:
+          type: integer
+          nullable: true
+          example: 3
+      required:
+      - name
+    UpdateFolderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Новое имя
+        parent_id:
+          type: integer
+          nullable: true
+          example: 2
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-02-01T12:05:00Z'
+      required:
+      - name
+      - updated_at
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+      - token
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: ok
+      required:
+      - message
+    FolderCreatedResponse:
+      type: object
+      properties:
+        folder_id:
+          type: integer
+          example: 10
+        message:
+          type: string
+          example: folder created
+      required:
+      - folder_id
+      - message
+    FileMovedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: file moved successfully
+      required:
+      - message
+    DownloadURLResponse:
+      type: object
+      properties:
+        download_url:
+          type: string
+          example: http://localhost:8080/files/download?token=...
+      required:
+      - download_url
+    UploadInitResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        message:
+          type: string
+          example: initialized
+      required:
+      - session_id
+      - message
+    UploadPartResponse:
+      type: object
+      properties:
+        part_number:
+          type: integer
+          example: 3
+        message:
+          type: string
+          example: uploaded
+      required:
+      - part_number
+      - message
+    UploadProgressResponse:
+      type: object
+      properties:
+        uploaded:
+          type: integer
+          example: 3
+        total:
+          type: integer
+          example: 5
+      required:
+      - uploaded
+      - total
+    FileMetadataResponse:
+      $ref: '#/components/schemas/File'
+paths:
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Регистрация нового пользователя
+      description: Принимает Email и пароль, создаёт запись в Registration и отправляет
+        код по почте.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Код отправлен на почту
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Неверный формат запроса или пользователь уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Слишком частые запросы
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Too Many Requests
+                  retryAfter:
+                    type: integer
+                    example: 60
+  /auth/register/confirm:
+    post:
+      tags:
+      - Auth
+      summary: Подтверждение регистрации
+      description: Принимает Email и код, подтверждает аккаунт.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+      responses:
+        '200':
+          description: Аккаунт подтверждён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Запись регистрации не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/register/resend:
+    post:
+      tags:
+      - Auth
+      summary: Повторная отправка кода подтверждения
+      description: Отправляет новый код, если с момента последней отправки прошло
+        ≥1 минута.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendCodeRequest'
+      responses:
+        '200':
+          description: Новый код отправлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Слишком частые запросы
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Too Many Requests
+                  retryAfter:
+                    type: integer
+                    example: 60
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Логин пользователя
+      description: Принимает Email и пароль, возвращает JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешный логин, возвращает токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Некорректный формат запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неверный Email или пароль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Логаут пользователя
+      description: Инвалидирует текущий JWT-токен.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный логаут
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Неверный или просроченный токен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /auth/me:
+    get:
+      tags:
+      - Auth
+      summary: Информация о текущем пользователе
+      description: Возвращает PublicUser по JWT-токену.
+      security:
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Информация о текущем пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicUser'
+        '401':
+          description: Неверный или просроченный токен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /admin/users:
+    get:
+      tags:
+      - Admin-Users
+      summary: Список всех пользователей (только админ)
+      description: Возвращает массив PublicUser.
+      security:
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Массив PublicUser
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicUser'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /admin/users/{id}:
+    get:
+      tags:
+      - Admin-Users
+      summary: Получить пользователя по ID (только админ)
+      description: Возвращает PublicUser по указанному ID.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: id
+        in: path
+        description: ID пользователя
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: PublicUser
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicUser'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /me/credentials:
+    put:
+      tags:
+      - User
+      summary: Обновить учётные данные
+      description: Обновляет пароль текущего пользователя (JWT-токен обязателен).
+      security:
+      - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+      responses:
+        '200':
+          description: Учётные данные обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '409':
+          description: Конфликт версий (updatedAt не совпадает)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /folders:
+    get:
+      tags:
+      - Folders
+      summary: Список папок текущего пользователя
+      description: Возвращает массив объектов Folder.
+      security:
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Массив Folder
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Folder'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+    post:
+      tags:
+      - Folders
+      summary: Создать папку
+      description: Создаёт новую папку для текущего пользователя.
+      security:
+      - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFolderRequest'
+      responses:
+        '201':
+          description: Папка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolderCreatedResponse'
+        '400':
+          description: Некорректный формат запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /folders/{folderID}:
+    get:
+      tags:
+      - Folders
+      summary: Получить папку по ID
+      description: Возвращает объект Folder.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Объект Folder
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+      - Folders
+      summary: Обновить папку
+      description: Меняет name и parentID. Текущее updatedAt передаётся для проверки
+        версий.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFolderRequest'
+      responses:
+        '200':
+          description: Папка обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Конфликт версий (updatedAt не совпадает)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+      - Trash
+      summary: Удалить папку (переместить в корзину)
+      description: Soft-удаление папки и всех вложенных файлов.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Папка перемещена в корзину
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /folders/{folderID}/download:
+    get:
+      tags:
+      - Folders
+      summary: Скачать папку целиком (zip-архив)
+      description: Стримит zip-архив с содержимым папки и вложенными папками.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Zip-архив
+          content:
+            application/zip: {}
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /folders/{folderID}/restore:
+    post:
+      tags:
+      - Trash
+      summary: Восстановить папку из корзины
+      description: Снимает soft-удаление у папки и всех вложенных сущностей.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Папка восстановлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /folders/{folderID}/permanent:
+    delete:
+      tags:
+      - Trash
+      summary: Полное удаление папки
+      description: Безвозвратно удаляет папку и все вложенные файлы из БД/диска.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Папка окончательно удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files:
+    get:
+      tags:
+      - Files
+      summary: Список всех файлов пользователя
+      description: Возвращает массив объектов File.
+      security:
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Массив File
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /files/{fileID}:
+    get:
+      tags:
+      - Files
+      summary: Получить информацию о файле
+      description: Возвращает объект File.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Объект File
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+      - Files
+      summary: Стриминг файла (If-Modified-Since)
+      description: 'Если ресурс не изменился, вернёт 304.
+
+        Иначе отправит контент файла (application/octet-stream).
+
+        '
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      - name: If-Modified-Since
+        in: header
+        description: Дата последней известной версии (RFC 1123).
+        required: false
+        schema:
+          type: string
+          example: Wed, 21 Oct 2025 07:28:00 GMT
+      responses:
+        '200':
+          description: Контент файла
+          content:
+            application/octet-stream: {}
+        '304':
+          description: Not Modified
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files/{fileID}/name:
+    put:
+      tags:
+      - Files
+      summary: Обновить имя файла
+      description: Меняет поле `name` у указанного fileID.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFileNameRequest'
+      responses:
+        '200':
+          description: Имя файла обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files/{fileID}/folderID:
+    put:
+      tags:
+      - Files
+      summary: Переместить файл в папку
+      description: Меняет поле `folder_id` для указанного fileID.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveFileRequest'
+      responses:
+        '200':
+          description: Файл успешно перемещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileMovedResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл или папка не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files/{fileID}/download-url:
+    get:
+      tags:
+      - Files
+      summary: Получение ссылки на скачивание
+      description: Генерирует краткоживущий URL для скачивания без JWT.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: URL для скачивания
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadURLResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /files/download:
+    get:
+      tags:
+      - Files
+      summary: Скачивание файла по токену
+      description: Если передан корректный токен (query) — стримит файл.
+      parameters:
+      - name: token
+        in: query
+        description: Download token
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Файл (application/octet-stream)
+          content:
+            application/octet-stream: {}
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /uploads/init:
+    post:
+      tags:
+      - Uploads
+      summary: Инициализация сессии мультизагрузки
+      description: Создаёт запись UploadSession, возвращает `session_id`.
+      security:
+      - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadSession'
+      responses:
+        '201':
+          description: Сессия инициализирована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadInitResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /uploads/{sessionID}/{partNumber}:
+    put:
+      tags:
+      - Uploads
+      summary: Загрузка части файла
+      description: Принимает raw-body с данными части, сохраняет её.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: sessionID
+        in: path
+        description: UUID сессии
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: partNumber
+        in: path
+        description: Номер части (1..total_parts)
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/octet-stream: {}
+      responses:
+        '200':
+          description: Часть загружена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadPartResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /uploads/{sessionID}/progress:
+    get:
+      tags:
+      - Uploads
+      summary: Получить прогресс загрузки
+      description: Возвращает число загруженных частей и общее число.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: sessionID
+        in: path
+        description: UUID сессии
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Прогресс загрузки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadProgressResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /uploads/{sessionID}/complete:
+    post:
+      tags:
+      - Uploads
+      summary: Завершение сессии мультизагрузки
+      description: Соединяет все части, создаёт файл и возвращает его метаданные.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: sessionID
+        in: path
+        description: UUID сессии
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Файл создан, возвращает метаданные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileMetadataResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /uploads/{sessionID}:
+    delete:
+      tags:
+      - Uploads
+      summary: Отменить сессию мультизагрузки
+      description: Удаляет все загруженные части и очищает запись UploadSession.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: sessionID
+        in: path
+        description: UUID сессии
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Сессия отменена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Сессия не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /trash/files:
+    get:
+      tags:
+      - Trash
+      summary: Список файлов в корзине
+      description: Возвращает массив объектов File.
+      security:
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Массив File
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /trash/files/{fileID}:
+    delete:
+      tags:
+      - Trash
+      summary: Удалить файл в корзину
+      description: Soft-удаление файла (помечает удалённым).
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Файл перемещён в корзину
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /trash/files/{fileID}/restore:
+    post:
+      tags:
+      - Trash
+      summary: Восстановить файл из корзины
+      description: Снимает soft-удаление с файла.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Файл восстановлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /trash/files/{fileID}/permanent:
+    delete:
+      tags:
+      - Trash
+      summary: Полное удаление файла
+      description: Безвозвратно удаляет файл из БД и хранилища.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: fileID
+        in: path
+        description: ID файла
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Файл окончательно удалён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Файл не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /trash/folders:
+    get:
+      tags:
+      - Trash
+      summary: Список папок в корзине
+      description: Возвращает массив объектов Folder.
+      security:
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Массив Folder
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Folder'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+  /trash/folders/{folderID}:
+    delete:
+      tags:
+      - Trash
+      summary: Удалить папку в корзину
+      description: Soft-удаление папки и всех вложенных файлов.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Папка перемещена в корзину
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /trash/folders/{folderID}/restore:
+    post:
+      tags:
+      - Trash
+      summary: Восстановить папку из корзины
+      description: Снимает soft-удаление у папки и всех вложенных сущностей.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Папка восстановлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /trash/folders/{folderID}/permanent:
+    delete:
+      tags:
+      - Trash
+      summary: Полное удаление папки
+      description: Безвозвратно удаляет папку и все вложенные файлы.
+      security:
+      - TokenAuth: []
+      parameters:
+      - name: folderID
+        in: path
+        description: ID папки
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Папка окончательно удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: invalid or expired token
+        '404':
+          description: Папка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

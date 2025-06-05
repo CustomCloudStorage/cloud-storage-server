@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
+	"strings"
 
 	"github.com/CustomCloudStorage/repositories"
 	"github.com/CustomCloudStorage/services"
@@ -38,9 +38,11 @@ func (m *authMiddleware) AuthMiddleWare() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			path := r.URL.Path
-			if slices.Contains(m.cfg.Ignore, path) {
-				h.ServeHTTP(w, r)
-				return
+			for _, ign := range m.cfg.Ignore {
+				if strings.HasPrefix(path, ign) {
+					h.ServeHTTP(w, r)
+					return
+				}
 			}
 			token := r.Header.Get(m.cfg.Header)
 			if token == "" {
